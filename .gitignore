@@ -1,0 +1,7 @@
+node_modules/
+.idea/
+.env
+terraform_iam.json
+.terraform
+.terraform.lock.hcl
+resource.tf
