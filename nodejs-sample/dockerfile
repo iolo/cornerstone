@@ -1,0 +1,24 @@
+FROM node:16-alpine
+WORKDIR /app
+COPY package*.json ./
+COPY .npmrc ./
+
+ARG GITHUB_TOKEN
+ENV GITHUB_TOKEN=$GITHUB_TOKEN
+RUN echo //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> ~/.npmrc
+
+RUN npm i
+
+ARG D1_ENV
+ENV D1_ENV=$D1_ENV
+ARG D1_SITE
+ENV D1_SITE=$D1_SITE
+ARG NODE_ENV
+ENV NODE_ENV=$NODE_ENV
+
+COPY . .
+RUN npm run build
+
+EXPOSE 8080
+
+CMD ["npm", "start"]
