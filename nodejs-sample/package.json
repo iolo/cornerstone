@@ -6,7 +6,7 @@
   "types": "./lib/index.d.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/day1co/cornerstone.git"
+    "url": "https://github.com/day1co/cornerstone-tasks.git"
   },
   "scripts": {
     "start": "npm run serve",
@@ -20,7 +20,7 @@
     "test": "jest --coverage --detectOpenHandles --forceExit"
   },
   "dependencies": {
-    "@day1co/cornerstone-nodejs-starter": "0.0.1",
+    "@day1co/cornerstone-starter": "~0.0.1",
     "@day1co/pebbles": "^3.1.24"
   },
   "devDependencies": {
