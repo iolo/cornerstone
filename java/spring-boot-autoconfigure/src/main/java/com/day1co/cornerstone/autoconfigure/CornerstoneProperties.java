@@ -3,7 +3,7 @@ package com.day1co.cornerstone.autoconfigure;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("day1co.cornerstone")
-public class cornerstoneProperties {
+public class CornerstoneProperties {
     public boolean setupOnStart = false;
     public String project = "fastcampus-web-services";
     public String region = "asia-northeast3";

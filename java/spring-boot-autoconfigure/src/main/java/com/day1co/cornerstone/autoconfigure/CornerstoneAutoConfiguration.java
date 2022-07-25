@@ -14,11 +14,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @AutoConfigureAfter(WebMvcAutoConfiguration.class)
 @ConditionalOnClass(Task.class)
-@EnableConfigurationProperties(cornerstoneProperties.class)
-public class cornerstoneAutoConfiguration {
-    final cornerstoneProperties properties;
+@EnableConfigurationProperties(CornerstoneProperties.class)
+public class CornerstoneAutoConfiguration {
+    final CornerstoneProperties properties;
 
-    public cornerstoneAutoConfiguration(cornerstoneProperties properties) {
+    public CornerstoneAutoConfiguration(CornerstoneProperties properties) {
         this.properties = properties;
     }
 

@@ -3,7 +3,7 @@ plugins {
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'io.freefair.lombok' version '6.4.3'
   id 'maven-publish'
-  id 'commons-library'
+  id 'java-library'
 }
 
 group 'com.day1co.cornerstone'
@@ -12,6 +12,7 @@ sourceCompatibility = '17'
 
 repositories {
   mavenCentral()
+  mavenLocal()
   maven {
     url = uri('https://maven.pkg.github.com/day1co/maven-repo')
     credentials {
@@ -29,7 +30,7 @@ dependencyManagement {
 }
 
 dependencies {
-  implementation 'com.day1co.cornerstone:cornerstone-spring-boot-starter-autoconfigure:0.0.1-SNAPSHOT'
+  implementation 'com.day1co.cornerstone:cornerstone-spring-boot-autoconfigure:0.0.1-SNAPSHOT'
   implementation 'com.day1co.cornerstone:cornerstone-commons:0.0.1-SNAPSHOT'
 }
 
@@ -57,10 +58,10 @@ publishing {
         githubPackages(MavenPublication) {
             from(components.java)
             versionMapping {
-                usage('commons-api') {
+                usage('java-api') {
                     fromResolutionOf('runtimeClasspath')
                 }
-                usage('commons-runtime') {
+                usage('java-runtime') {
                     fromResolutionResult()
                 }
             }
