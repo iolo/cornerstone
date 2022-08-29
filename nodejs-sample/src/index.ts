@@ -1,5 +1,5 @@
 import { LoggerFactory } from '@day1co/pebbles';
-import { Application } from '@day1co/cornerstone-nodejs-starter';
+import { Application } from '@day1co/cornerstone-starter';
 
 import { SampleService } from './sample-service';
 import { SampleTask } from './sample-task';

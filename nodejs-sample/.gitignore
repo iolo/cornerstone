@@ -13,3 +13,6 @@ coverage/
 # IDE
 .idea
 .vscode
+
+# Cloud Run YAML Output File
+deploy/cloud-run-service.20*.yml

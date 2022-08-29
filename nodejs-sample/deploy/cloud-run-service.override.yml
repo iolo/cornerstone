@@ -1,0 +1,18 @@
+spec:
+  template:
+    spec:
+      containerConcurrency: 20
+      containers:
+        - env:
+            - name: D1_ENV
+              value: ${D1_ENV}
+            - name: D1_SITE
+              value: ${D1_SITE}
+            - name: BUILD_ID
+              value: ${BUILD_ID}
+            - name: SOME_VARIABLE
+              value: ${SOME_VARIABLE}
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 1024Mi

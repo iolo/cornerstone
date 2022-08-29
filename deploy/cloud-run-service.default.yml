@@ -1,0 +1,49 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/launch-stage: BETA
+  name: ${CLOUD_RUN_NAME}
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '100'
+        autoscaling.knative.dev/minScale: '0'
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/vpc-access-connector: cloudrun-vpc-connector-03
+        run.googleapis.com/vpc-access-egress: all-traffic
+    spec:
+      containerConcurrency: 1
+      containers:
+        - image: ${IMAGE}
+          env:
+            - name: D1_ENV
+              value: ${D1_ENV}
+            - name: D1_SITE
+              value: ${D1_SITE}
+            - name: BUILD_ID
+              value: ${BUILD_ID}
+          ports:
+            - containerPort: 8080
+              name: http1
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          volumeMounts:
+            - mountPath: /env
+              name: deimos-env-volume
+      timeoutSeconds: 300
+      volumes:
+        - name: deimos-env-volume
+          secret:
+            items:
+              - key: latest
+                path: .env
+            secretName: config-deimos
+  traffic:
+    - latestRevision: true
+      percent: 100

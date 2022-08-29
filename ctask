@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# Abort the script at the first error
+set -e
+#  Causes a pipeline to return the exit status of the last command in the pipe that returned a non-zero return value.
+set -o pipefail
+
+COMMAND="$1"
+if [ "$COMMAND" == "help" ]; then
+  echo "Deployment Script"
+  echo ""
+  echo "Usage:"
+  echo "  ./ctask command task-env-file-path"
+  echo ""
+  echo "Example:"
+  echo "./ctask deploy ./deploy-dev.env"
+  echo "./ctask deploy ./nodejs-sample/deploy/deploy-dev.env"
+  echo ""
+  echo "Available commands:"
+  echo "  deploy - deploys the task to the specified environment"
+  echo "  undeploy - undeploys the task from the specified environment"
+  echo "  topic-info - displays the topic name for the task"
+  echo "  urls - displays the URLs for the task"
+  echo "  help - displays this help message"
+  exit 0
+fi
+
+DEPLOY_DIR="$(dirname -- $(realpath "$0"))/deploy"
+TASK_ENV_DIR=$(dirname -- $(realpath "$2"))
+TASK_ENV_FILE=$(basename -- "$2")
+
+# Ctrl+C to exit
+trap "echo The script is terminated; (popd >/dev/null); exit" SIGINT
+
+# ENV file 내에서 경로를 상대경로로 명시하기 위해 pushd/popd 를 사용한다.
+pushd "$TASK_ENV_DIR" >/dev/null
+# 함수 로드
+source "$DEPLOY_DIR/lib.sh"
+# 기본값 로드
+source "$DEPLOY_DIR/default.env"
+# TASK_ENV_FILE 오버라이드
+source "$TASK_ENV_FILE"
+
+# export for GCLOUD CLI
+export CLOUDSDK_CORE_PROJECT CLOUDSDK_RUN_REGION CLOUDSDK_ARTIFACTS_LOCATION
+
+if [ -f "$CLOUD_RUN_SERVICE_OVERRIDE_FILE" ]; then
+  CLOUD_RUN_SERVICE_OVERRIDE_FILE=$(realpath "$CLOUD_RUN_SERVICE_OVERRIDE_FILE")
+fi
+
+if [ -f "$SUBSCRIPTION_FLAGS_FILE" ]; then
+  SUBSCRIPTION_FLAGS_FILE=$(realpath "$SUBSCRIPTION_FLAGS_FILE")
+fi
+
+if [ -f "$SCHEDULER_FLAGS_FILE" ]; then
+  SCHEDULER_FLAGS_FILE=$(realpath "$SCHEDULER_FLAGS_FILE")
+fi
+
+# $D1_ENV, $D1_SITE 변수는 필수값, 없으면 오류를 발생시킨다
+D1_ENVS=(development staging production qa)
+D1_SITES=(day1 fastcampus coloso colosous colosojp crater zerobase bemydoctor motiontribe lmsadmin b2bmarketing lxp
+          mylight newspresso wannaspeak)
+
+if [ "$(validate_array_in "${D1_ENVS}" "$D1_ENV")" != true ]; then
+  # shellcheck disable=SC2145
+  echo "D1_ENV is not valid. Valid values are ${D1_ENVS[@]}, but ${D1_ENV} is given."
+  exit 1
+fi
+
+if [ "$(validate_array_in "${D1_SITES}" "$D1_SITE")" != true ]; then
+  # shellcheck disable=SC2145
+  echo "D1_SITE is not valid. Valid values are ${D1_SITES[@]}, but ${D1_SITE} is given."
+  exit 1
+fi
+
+# Use for cloud-cloud-run-service.default.yml
+export D1_ENV D1_SITE
+
+popd >/dev/null
+
+pushd "$TASK_ROOT" >/dev/null
+if [ "$COMMAND" == "deploy" ]; then
+  _deploy
+elif [ "$COMMAND" == "undeploy" ]; then
+  _undeploy
+elif [ "$COMMAND" == "topic-info" ]; then
+  get_topic_name
+elif [ "$COMMAND" == "urls" ]; then
+  print_urls
+else
+  echo "Invalid command: $COMMAND"
+  exit 1
+fi
+popd >/dev/null

@@ -9,7 +9,7 @@ export class SampleTask implements Task<string> {
   constructor(readonly sampleService: SampleService) {}
 
   async execute(message: string): Promise<void> {
-    logger.debug(`message:${message}`);
+    logger.info(`message:${message}`);
     try {
       this.sampleService.doSomething(message);
     } catch (e) {
