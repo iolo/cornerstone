@@ -1,10 +1,11 @@
 #!/bin/bash
 
 validate_array_in() {
-  HAYSTACK=$1
-  NEEDLE=$2
+  NEEDLE=$1
+  shift
+  HAYSTACK=$@
 
-  for item in "${HAYSTACK[@]}"; do
+  for item in $HAYSTACK; do
     if [ "$item" = "$NEEDLE" ]; then
       echo "true"
       return

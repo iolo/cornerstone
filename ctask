@@ -6,7 +6,7 @@ set -e
 set -o pipefail
 
 COMMAND="$1"
-if [ "$COMMAND" == "help" ]; then
+if [ "$COMMAND" = "help" ] || [ "$COMMAND" = "" ]; then
   echo "Deployment Script"
   echo ""
   echo "Usage:"
@@ -61,13 +61,13 @@ D1_ENVS=(development staging production qa)
 D1_SITES=(day1 fastcampus coloso colosous colosojp crater zerobase bemydoctor motiontribe lmsadmin b2bmarketing lxp
           mylight newspresso wannaspeak)
 
-if [ "$(validate_array_in "${D1_ENVS}" "$D1_ENV")" != true ]; then
+if [ "$(validate_array_in "$D1_ENV" "${D1_ENVS[@]}")" != "true" ]; then
   # shellcheck disable=SC2145
   echo "D1_ENV is not valid. Valid values are ${D1_ENVS[@]}, but ${D1_ENV} is given."
   exit 1
 fi
 
-if [ "$(validate_array_in "${D1_SITES}" "$D1_SITE")" != true ]; then
+if [ "$(validate_array_in "$D1_SITE" "${D1_SITES[@]}")" != true ]; then
   # shellcheck disable=SC2145
   echo "D1_SITE is not valid. Valid values are ${D1_SITES[@]}, but ${D1_SITE} is given."
   exit 1
