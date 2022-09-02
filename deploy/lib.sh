@@ -195,12 +195,14 @@ docker_image_exists_local() {
 #  build_docker_image --build-arg BUILD_ARG=1 --build-arg BUILD_ARG2=2
 #
 build_docker_image() {
-  local BUILD_ARGS="$@"
   local DOCKER_IMAGE_TAG="$(get_docker_image_tag)"
+  local TASK_NAME="$(get_task_name)"
 
   # ARM 환경에서 빌드된 것이 배포되지 않도록 platform 은 linux/amd64 로 고정
-  # shellcheck disable=SC2086
-  docker build $BUILD_ARGS --platform linux/amd64 -t "$DOCKER_IMAGE_TAG" .
+  export DOCKER_DEFAULT_PLATFORM=linux/amd64
+  export IMAGE_TAG="$DOCKER_IMAGE_TAG"
+
+  docker-compose build "$TASK_NAME"
 }
 
 push_docker_image() {

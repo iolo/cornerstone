@@ -1,0 +1,11 @@
+services:
+  nodejs-sample:
+    image: ${IMAGE_TAG:-cornerstone-tasks/nodejs-sample} # 로컬에서 사용할 이미지 이름을 `:-` 뒤에 지정합니다.
+    build:
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+
+networks:
+  default:
+    name: cornerstone-tasks-network
+    external: true
