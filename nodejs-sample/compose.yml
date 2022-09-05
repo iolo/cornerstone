@@ -4,8 +4,3 @@ services:
     build:
       args:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
-
-networks:
-  default:
-    name: cornerstone-tasks-network
-    external: true
