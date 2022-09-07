@@ -25,8 +25,8 @@ export class TaskRoute<T> {
         .then(() => logger.debug('ok'))
         .catch((e: Error) => logger.error('error', e));
     });
-    reply.code(202);
-    reply.send('ACCEPTED');
+    reply.code(200);
+    reply.send('SUCESS');
   }
 
   async ping(request: FastifyRequest, reply: FastifyReply) {
