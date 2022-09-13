@@ -91,7 +91,8 @@ create_subscription() {
   if subscription_exists "$SUBSCRIPTION"; then
     echo "Subscription $SUBSCRIPTION already exists. Updating.."
     gcloud pubsub subscriptions update "$SUBSCRIPTION" \
-      --push-endpoint="$ENTRYPOINT"
+      --push-endpoint="$ENTRYPOINT" \
+      --push-auth-service-account "$OIDC_SERVICE_ACCOUNT_EMAIL"
   else
     echo "Subscription $SUBSCRIPTION does not exist. Creating..."
     gcloud pubsub subscriptions create "$SUBSCRIPTION" \
