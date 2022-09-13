@@ -27,7 +27,7 @@ fi
 
 # see https://stackoverflow.com/questions/3572030/bash-script-absolute-path-with-os-x
 realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+  [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
 
 DEPLOY_DIR="$(dirname -- $(realpath "$0"))/deploy"
