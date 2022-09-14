@@ -34,14 +34,15 @@ func main() {
 	switch {
 	case args.TopicSubCommand != nil:
 		switch {
+
 		case args.TopicSubCommand.CreateTopic != nil:
 			topicID := args.TopicSubCommand.CreateTopic.TopicID
 			topics.Create(os.Stdout, projectID, topicID)
-			fmt.Printf("Topic created")
+
 		case args.TopicSubCommand.ListTopic != nil:
 			list, err := topics.List(projectID)
 			if err != nil {
-				fmt.Println("Error: ", err)
+				fmt.Fprintln(os.Stderr, "Error: ", err)
 				os.Exit(1)
 			}
 
@@ -50,6 +51,7 @@ func main() {
 				fmt.Println("List of Topics:")
 				fmt.Println(topic)
 			}
+
 		case args.TopicSubCommand.PublishMessage != nil:
 			topicID := args.TopicSubCommand.PublishMessage.TopicID
 			message := args.TopicSubCommand.PublishMessage.Message
@@ -68,13 +70,13 @@ func main() {
 
 		topic, err := topics.Get(projectID, topicID)
 		if err != nil {
-			fmt.Printf("Error getting topic: %v", err)
+			fmt.Fprintln(os.Stderr, "Error getting topic: ", err)
 			os.Exit(1)
 		}
 
 		subscriptions.CreateWithEndpoint(os.Stdout, projectID, subscriptionID, topic, endpoint)
 
 	default:
-		fmt.Printf("No command specified")
+		fmt.Fprintln(os.Stderr, "No command specified")
 	}
 }
