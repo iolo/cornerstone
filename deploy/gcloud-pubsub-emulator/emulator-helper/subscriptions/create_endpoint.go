@@ -14,14 +14,12 @@
 
 package subscriptions
 
-// [START pubsub_create_push_subscription]
 import (
+	pubsub "cloud.google.com/go/pubsub"
 	"context"
 	"fmt"
 	"io"
 	"time"
-
-	"cloud.google.com/go/pubsub"
 )
 
 func CreateWithEndpoint(w io.Writer, projectID, subID string, topic *pubsub.Topic, endpoint string) error {
@@ -34,7 +32,6 @@ func CreateWithEndpoint(w io.Writer, projectID, subID string, topic *pubsub.Topi
 	if err != nil {
 		return fmt.Errorf("pubsub.NewClient: %v", err)
 	}
-	defer client.Close()
 
 	sub, err := client.CreateSubscription(ctx, subID, pubsub.SubscriptionConfig{
 		Topic:       topic,
@@ -45,6 +42,10 @@ func CreateWithEndpoint(w io.Writer, projectID, subID string, topic *pubsub.Topi
 		return fmt.Errorf("CreateSubscription: %v", err)
 	}
 	fmt.Fprintf(w, "Created subscription: %v\n", sub)
+
+	// sleep for 300ms
+	time.Sleep(300 * time.Millisecond)
+	client.Close()
 	return nil
 }
 

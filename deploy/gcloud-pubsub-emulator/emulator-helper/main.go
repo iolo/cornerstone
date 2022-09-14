@@ -47,8 +47,8 @@ func main() {
 			}
 
 			// for loop to print list
+			fmt.Println("List of Topics:")
 			for _, topic := range list {
-				fmt.Println("List of Topics:")
 				fmt.Println(topic)
 			}
 

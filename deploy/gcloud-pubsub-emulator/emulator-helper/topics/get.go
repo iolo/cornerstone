@@ -5,6 +5,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"context"
 	"fmt"
+	"time"
 )
 
 func Get(projectID string, topicID string) (*pubsub.Topic, error) {
@@ -14,9 +15,11 @@ func Get(projectID string, topicID string) (*pubsub.Topic, error) {
 	if err != nil {
 		return nil, fmt.Errorf("pubsub.NewClient: %v", err)
 	}
-	defer client.Close()
 
 	topic := client.TopicInProject(topicID, projectID)
+
+	time.Sleep(300 * time.Millisecond)
+	client.Close()
 	return topic, nil
 }
 

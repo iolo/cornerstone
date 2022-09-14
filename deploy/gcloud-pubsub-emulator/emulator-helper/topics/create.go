@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 )
 
 // Copyright 2019 Google LLC
@@ -33,13 +34,14 @@ func Create(w io.Writer, projectID, topicID string) error {
 	if err != nil {
 		return fmt.Errorf("pubsub.NewClient: %v", err)
 	}
-	defer client.Close()
 
 	t, err := client.CreateTopic(ctx, topicID)
 	if err != nil {
 		return fmt.Errorf("CreateTopic: %v", err)
 	}
 	fmt.Fprintf(w, "Topic created: %v\n", t)
+	time.Sleep(300 * time.Millisecond)
+	client.Close()
 	return nil
 }
 

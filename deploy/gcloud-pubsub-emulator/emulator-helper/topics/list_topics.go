@@ -18,6 +18,7 @@ package topics
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/iterator"
@@ -30,11 +31,11 @@ func List(projectID string) ([]*pubsub.Topic, error) {
 	if err != nil {
 		return nil, fmt.Errorf("pubsub.NewClient: %v", err)
 	}
-	defer client.Close()
 
 	var topics []*pubsub.Topic
 
 	it := client.Topics(ctx)
+
 	for {
 		topic, err := it.Next()
 		if err == iterator.Done {
@@ -46,6 +47,8 @@ func List(projectID string) ([]*pubsub.Topic, error) {
 		topics = append(topics, topic)
 	}
 
+	time.Sleep(300 * time.Millisecond)
+	client.Close()
 	return topics, nil
 }
 
