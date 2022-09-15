@@ -203,7 +203,7 @@ build_docker_image() {
   export DOCKER_DEFAULT_PLATFORM=linux/amd64
   export IMAGE_TAG="$DOCKER_IMAGE_TAG"
 
-  docker-compose build "$TASK_NAME-builder"
+  docker-compose build "$TASK_NAME"
   unset DOCKER_DEFAULT_PLATFORM
 }
 
