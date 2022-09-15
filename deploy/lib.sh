@@ -332,56 +332,19 @@ send_message_to_pubsub() {
   gcloud pubsub topics publish "$(get_topic_name)" "$1"
 }
 
-get_deadletter_topic_name() {
+get_dead_letter_topic_name() {
   local TASK_NAME=$(get_task_name)
-  echo "topic-cornerstone-${D1_ENV}-${D1_SITE}-deadletter"
+  echo "topic-cornerstone-${D1_ENV}-${D1_SITE}-dead-letter"
 }
 
-get_deadletter_subscription_name() {
-  echo "sub-cornerstone-${D1_ENV}-${D1_SITE}-deadletter"
+get_dead_letter_subscription_name() {
+  echo "sub-cornerstone-${D1_ENV}-${D1_SITE}-dead-letter"
 }
 
-# Public: DeadLetter 토픽이 없는 경우 생성한다
-create_deadletter_topic_and_subscription() {
-  local TOPIC_NAME=$(get_deadletter_topic_name)
-  local SUBSCRIPTION=$(get_deadletter_subscription_name)
-
-  if topic_exists "$TOPIC_NAME"; then
-    echo "Topic $TOPIC_NAME already exists. Skip creating topic."
-  else
-    echo "Topic $TOPIC_NAME does not exist. Creating..."
-    gcloud pubsub topics create "$TOPIC_NAME" \
-      --flags-file="$DEPLOY_DIR/.common.default.tmp.yml"
-  fi
-
-  if subscription_exists "$SUBSCRIPTION"; then
-    echo "Subscription $SUBSCRIPTION already exists. Updating.."
-    gcloud pubsub subscriptions update "$SUBSCRIPTION" \
-      --push-endpoint="$ENTRYPOINT"
-  else
-    echo "Subscription $SUBSCRIPTION does not exist. Creating..."
-    gcloud pubsub subscriptions create "$SUBSCRIPTION" \
-      --flags-file="$DEPLOY_DIR/.common.default.tmp.yml"
-    --topic "$TOPIC_NAME" \
-      --expiration-period="never"
-  fi
-
-  return $?
-}
-
-get_deadletter_topic_name() {
-  local TASK_NAME=$(get_task_name)
-  echo "topic-cornerstone-${D1_ENV}-${D1_SITE}-deadletter"
-}
-
-get_deadletter_subscription_name() {
-  echo "sub-cornerstone-${D1_ENV}-${D1_SITE}-deadletter"
-}
-
-# Public: DeadLetter 토픽이 없는 경우 생성한다
-create_deadletter_topic_and_subscription() {
-  local TOPIC_NAME=$(get_deadletter_topic_name)
-  local SUBSCRIPTION=$(get_deadletter_subscription_name)
+# Public: Dead Letter 토픽이 없는 경우 생성한다
+create_dead_letter_topic_and_subscription() {
+  local TOPIC_NAME=$(get_dead_letter_topic_name)
+  local SUBSCRIPTION=$(get_dead_letter_subscription_name)
 
   if topic_exists "$TOPIC_NAME"; then
     echo "Topic $TOPIC_NAME already exists. Skip creating topic."
@@ -428,7 +391,7 @@ _deploy() {
   replace_cloudrun "$CLOUD_RUN_SERVICE_OVERRIDE_FILE"
 
   create_topic
-  create_deadletter_topic_and_subscription
+  create_dead_letter_topic_and_subscription
 
   # if $SUBSCRIPTION_FLAGS_FILE is normal file, use it
   if [ -f "$SUBSCRIPTION_FLAGS_FILE" ]; then
@@ -494,7 +457,7 @@ gcloud_emulator_helper() {
 }
 
 _local() {
-   # when it terminates, background task also exits
+  # when it terminates, background task also exits
   set -e
   trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
