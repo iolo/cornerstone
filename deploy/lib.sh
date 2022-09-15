@@ -203,7 +203,8 @@ build_docker_image() {
   export DOCKER_DEFAULT_PLATFORM=linux/amd64
   export IMAGE_TAG="$DOCKER_IMAGE_TAG"
 
-  docker-compose build "$TASK_NAME"
+  docker-compose build "$TASK_NAME-builder"
+  unset DOCKER_DEFAULT_PLATFORM
 }
 
 push_docker_image() {
@@ -368,7 +369,7 @@ create_deadletter_topic_and_subscription() {
   return $?
 }
 
-get_dead_letter_topic_name() {
+get_deadletter_topic_name() {
   local TASK_NAME=$(get_task_name)
   echo "topic-cornerstone-${D1_ENV}-${D1_SITE}-deadletter"
 }
@@ -379,7 +380,7 @@ get_deadletter_subscription_name() {
 
 # Public: DeadLetter 토픽이 없는 경우 생성한다
 create_deadletter_topic_and_subscription() {
-  local TOPIC_NAME=$(get_dead_letter_topic_name)
+  local TOPIC_NAME=$(get_deadletter_topic_name)
   local SUBSCRIPTION=$(get_deadletter_subscription_name)
 
   if topic_exists "$TOPIC_NAME"; then
@@ -473,4 +474,78 @@ _undeploy() {
   delete_topic
 
   delete_cloudrun
+}
+
+check_container_healthy() {
+  local CONTAINER_NAME=$1
+  local HEALTHY=$(docker inspect $CONTAINER_NAME | jq -r '.[0].State.Health.Status')
+  # return $HEALTY is healty
+  if [ "$HEALTHY" = "healthy" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+gcloud_emulator_helper() {
+  local EMULATOR_SERVICE_NAME="gcloud-pubsub-emulator"
+  docker exec \
+    "$EMULATOR_SERVICE_NAME" pubsub-emulator-helper "$@"
+}
+
+_local() {
+   # when it terminates, background task also exits
+  set -e
+  trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
+  local TOPIC_NAME="$(get_topic_name)"
+  local SUBSCRIPTION_NAME="$(get_subscription_name)"
+
+  local TASK_NAME="$(get_task_name)"
+  local PUSH_ENDPOINT="http://$TASK_NAME:8080"
+
+  local EMULATOR_CONTAINER_NAME="gcloud-pubsub-emulator"
+  local EMULATOR_IMAGE="asia-northeast3-docker.pkg.dev/fastcampus-web-services/cornerstone/gcloud-pubsub-emulator"
+  local PUBSUB_PROJECT_ID="fastcampus-web-services"
+  local TIMEOUT=30
+  local PORT=8085
+  local EMULATOR_SERVICE_NAME="gcloud-pubsub-emulator"
+
+  docker stop "$EMULATOR_CONTAINER_NAME" 2>/dev/null || :
+  export EMULATOR_IMAGE EMULATOR_CONTAINER_NAME PUBSUB_PROJECT_ID PORT
+
+  # run on background and wait for emulator to start
+  {
+    echo "Waiting for emulator to start..."
+
+    local COUNTER=0
+    until check_container_healthy $EMULATOR_CONTAINER_NAME; do
+      COUNTER=$((COUNTER + 1))
+      if [ "$COUNTER" -gt "$TIMEOUT" ]; then
+        echo "Timeout, exiting..."
+        exit 1
+      fi
+      sleep 1
+    done
+
+    gcloud_emulator_helper topic create "$TOPIC_NAME"
+
+    gcloud_emulator_helper topic list
+
+    echo "creating push subscription $SUBSCRIPTION_NAME"
+    gcloud_emulator_helper sub create-push -t "$TOPIC_NAME" "$SUBSCRIPTION_NAME" "$PUSH_ENDPOINT"
+  } &
+
+  docker-compose \
+    -f "$TASK_DIR"/compose.yml \
+    -f "$DEPLOY_DIR"/gcloud-pubsub-emulator/compose.yml \
+    up \
+    gcloud-pubsub-emulator "$TASK_NAME"
+
+}
+
+_local_publish() {
+  local TOPIC_NAME="$(get_topic_name)"
+  local MESSAGE="$1"
+  gcloud_emulator_helper topic publish "$TOPIC_NAME" "$MESSAGE"
 }

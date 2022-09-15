@@ -32,6 +32,7 @@ realpath() {
 
 DEPLOY_DIR="$(dirname -- $(realpath "$0"))/deploy"
 TASK_ENV_DIR=$(dirname -- $(realpath "$2"))
+TASK_DIR=$(dirname -- "${TASK_ENV_DIR}")
 TASK_ENV_FILE=$(basename -- "$2")
 
 # Ctrl+C to exit
@@ -64,7 +65,7 @@ fi
 # $D1_ENV, $D1_SITE 변수는 필수값, 없으면 오류를 발생시킨다
 D1_ENVS=(development staging production qa)
 D1_SITES=(day1 fastcampus coloso colosous colosojp crater zerobase bemydoctor motiontribe lmsadmin b2bmarketing lxp
-          mylight newspresso wannaspeak)
+  mylight newspresso wannaspeak)
 
 if [ "$(validate_array_in "$D1_ENV" "${D1_ENVS[@]}")" != "true" ]; then
   # shellcheck disable=SC2145
@@ -92,7 +93,12 @@ elif [ "$COMMAND" == "topic-info" ]; then
   get_topic_name
 elif [ "$COMMAND" == "urls" ]; then
   print_urls
+elif [ "$COMMAND" == "local" ]; then
+  _local
+elif [ "$COMMAND" == "local-publish" ]; then
+  _local_publish "$3"
 else
+
   echo "Invalid command: $COMMAND"
   exit 1
 fi
