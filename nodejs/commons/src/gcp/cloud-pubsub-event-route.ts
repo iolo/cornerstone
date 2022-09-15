@@ -24,8 +24,8 @@ export class CloudPubSubEventRoute<T> {
         .then(() => logger.debug('ok'))
         .catch((e) => logger.error('error', e));
     });
-    reply.code(202);
-    reply.send('ACCEPTED');
+    reply.code(200);
+    reply.send('SUCCESS');
   }
   bindRoutes(server: FastifyInstance) {
     server.route({
