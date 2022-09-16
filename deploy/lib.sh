@@ -203,7 +203,7 @@ build_docker_image() {
   export DOCKER_DEFAULT_PLATFORM=linux/amd64
   export IMAGE_TAG="$DOCKER_IMAGE_TAG"
 
-  docker-compose build "$TASK_NAME"
+  docker compose build "$TASK_NAME"
   unset DOCKER_DEFAULT_PLATFORM
 }
 
@@ -499,7 +499,7 @@ _local() {
     gcloud_emulator_helper sub create-push -t "$TOPIC_NAME" "$SUBSCRIPTION_NAME" "$PUSH_ENDPOINT"
   } &
 
-  docker-compose \
+  docker compose \
     -f "$TASK_DIR"/compose.yml \
     -f "$DEPLOY_DIR"/gcloud-pubsub-emulator/compose.yml \
     up \
