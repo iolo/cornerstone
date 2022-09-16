@@ -1,0 +1,21 @@
+services:
+  gcloud-pubsub-emulator:
+    build:
+      dockerfile: ./Dockerfile
+      args:
+        PORT: ${PORT:-8085}
+        PUBSUB_PROJECT_ID: ${PUBSUB_PROJECT_ID:-fastcampus-web-services}
+    image: asia-northeast3-docker.pkg.dev/fastcampus-web-services/cornerstone/gcloud-pubsub-emulator
+    container_name: ${EMULATOR_CONTAINER_NAME:-gcloud-pubsub-emulator}
+    environment:
+      PUBSUB_PROJECT_ID: ${PUBSUB_PROJECT_ID:-fastcampus-web-services}
+      PUBSUB_EMULATOR_HOST: localhost:8085
+    ports:
+      - ${PORT:-8085}:8085
+    command: [ '--host-port', '0.0.0.0:${PORT:-8085}', '--project', '${PUBSUB_PROJECT_ID:-fastcampus-web-services}' ]
+    init: true
+
+networks:
+  default:
+    name: cornerstone-tasks-network
+    external: true
