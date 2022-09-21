@@ -19,6 +19,8 @@ if [ "$COMMAND" = "help" ] || [ "$COMMAND" = "" ]; then
   echo "Available commands:"
   echo "  deploy - deploys the task to the specified environment"
   echo "  undeploy - undeploys the task from the specified environment"
+  echo "  local - runs the task locally"
+  echo "  local-publish - publish message locally"
   echo "  topic-info - displays the topic name for the task"
   echo "  urls - displays the URLs for the task"
   echo "  help - displays this help message"
