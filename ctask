@@ -95,8 +95,8 @@ if [ "$COMMAND" == "deploy" ]; then
   _deploy
 elif [ "$COMMAND" == "undeploy" ] || [ "$COMMAND" == "unmock" ]; then
   _undeploy
-elif [ "$COMMAND" == "topic-info" ]; then
-  get_topic_name
+elif [ "$COMMAND" == "info" ]; then
+  _info
 elif [ "$COMMAND" == "urls" ]; then
   print_urls
 elif [ "$COMMAND" == "publish" ]; then

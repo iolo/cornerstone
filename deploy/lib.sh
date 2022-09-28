@@ -21,8 +21,7 @@ git_commit_id() {
 # topic 이 있으면 0, 없으면 1 을 반환한다.
 topic_exists() {
   local TOPIC=$1
-
-  gcloud pubsub topics describe "$TOPIC" >/dev/null
+  gcloud pubsub topics describe "$TOPIC" 1>/dev/null 2>/dev/null
   return $?
 }
 
@@ -56,7 +55,7 @@ create_topic() {
 subscription_exists() {
   local SUBSCRIPTION=$1
 
-  gcloud pubsub subscriptions describe "$SUBSCRIPTION" >/dev/null
+  gcloud pubsub subscriptions describe "$SUBSCRIPTION" 1>/dev/null 2>/dev/null
   return $?
 }
 
@@ -114,7 +113,7 @@ create_subscription() {
 scheduler_exists() {
   local JOB="$1"
 
-  gcloud scheduler jobs describe "$JOB" --location $X_CLOUDSDK_SCHEDULER_LOCATION >/dev/null
+  gcloud scheduler jobs describe "$JOB" --location $X_CLOUDSDK_SCHEDULER_LOCATION 1>/dev/null 2>/dev/null
   return $?
 }
 
@@ -228,8 +227,9 @@ get_task_entrypoint() {
 get_cloudrun_name() {
   echo "run-cornerstone-${D1_ENV}-${D1_SITE}-$(get_task_name)"
 }
+
 cloudrun_exists() {
-  gcloud run services describe "$(get_cloudrun_name)" 2>/dev/null
+  gcloud run services describe "$(get_cloudrun_name)" 1>/dev/null 2>/dev/null
   return $?
 }
 
@@ -478,4 +478,60 @@ _publish() {
   local MESSAGE=$1
   echo "Publishing Message: $MESSAGE to topic: $TOPIC_NAME"
   gcloud pubsub topics publish "$TOPIC_NAME" --message "$MESSAGE"
+}
+
+_info() {
+  local TOPIC_NAME=$(get_topic_name)
+  local TOPIC_EXISTS=$(topic_exists "$TOPIC_NAME" && echo "true" || echo "false")
+
+  local SUBSCRIPTION_NAME=$(get_subscription_name)
+  local SUBSCRIPTION_EXISTS=$(subscription_exists "$SUBSCRIPTION_NAME" && echo "true" || echo "false")
+
+  local DEAD_LETTER_TOPIC_NAME=$(get_dead_letter_topic_name)
+  local DEAD_LETTER_TOPIC_EXISTS=$(topic_exists "$DEAD_LETTER_TOPIC_NAME" && echo "true" || echo "false")
+
+  local CLOUD_RUN_NAME=$(get_cloudrun_name)
+  local CLOUD_RUN_EXISTS=$(cloudrun_exists && echo "true" || echo "false")
+
+  echo "-------------------------"
+  echo "Topic & Subscription"
+  echo "-------------------------"
+  echo "Topic Name: $TOPIC_NAME"
+  if [ "$TOPIC_EXISTS" = "true" ]; then
+    echo "Topic URL: $(get_topic_url)"
+  else
+    echo "Topic URL: Topic does not exist"
+  fi
+
+  echo "Subscription Name: $SUBSCRIPTION_NAME"
+  if [ "$SUBSCRIPTION_EXISTS" = "true" ]; then
+    echo "Subscription URL: $(get_subscription_url)"
+  else
+    echo "Subscription URL: Subscription does not exist"
+  fi
+
+  echo "Dead Letter Topic Name: $(get_dead_letter_topic_name)"
+
+  if [ "$CLOUD_RUN_EXISTS" == "true" ]; then
+    echo "-------------------------"
+    echo "Cloud Run"
+    echo "-------------------------"
+    echo "Name: $CLOUD_RUN_NAME"
+    echo "URL: $(get_cloudrun_url)"
+    echo "Log URL: $(get_cloudrun_log_url)"
+  fi
+
+  if [ "$USING_SCHEDULER" = "true" ]; then
+    echo "-------------------------"
+    echo "Cloud Scheduler"
+    echo "-------------------------"
+    echo "Name: $(get_scheduler_name)"
+    echo "URL: $(get_scheduler_url)"
+  fi
+
+  echo "-------------------------"
+  echo "Entry Point"
+  echo "-------------------------"
+  echo "URL: $(get_task_entrypoint)"
+
 }
