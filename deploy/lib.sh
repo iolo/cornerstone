@@ -81,7 +81,7 @@ get_subscription_url() {
 create_subscription() {
   local ARGS="$@"
   local TASK_NAME="$(get_task_name)"
-  local ENTRYPOINT="$(get_cloudrun_entrypoint)"
+  local ENTRYPOINT="$(get_task_entrypoint)"
   local TOPIC_NAME="$(get_topic_name)"
   local SUBSCRIPTION="$(get_subscription_name)"
   local DEAD_LETTER_TOPIC_NAME="$(get_dead_letter_topic_name)"
@@ -135,7 +135,7 @@ get_scheduler_url() {
 create_scheduler() {
   local ARGS="$@"
   local JOB_NAME="$(get_scheduler_name)"
-  local ENTRYPOINT="$(get_cloudrun_entrypoint)"
+  local ENTRYPOINT="$(get_task_entrypoint)"
   local TOPIC_NAME="$(get_topic_name)"
   local TOPIC="projects/${CLOUDSDK_CORE_PROJECT}/topics/$TOPIC_NAME"
 
@@ -217,8 +217,12 @@ get_artifact_registry_url() {
   echo "https://console.cloud.google.com/artifacts/docker/${CLOUDSDK_CORE_PROJECT}/${CLOUDSDK_ARTIFACTS_LOCATION}/cornerstone-tasks/${TASK_NAME}/${DIGEST}?project=${CLOUDSDK_CORE_PROJECT}"
 }
 
-get_cloudrun_entrypoint() {
-  gcloud run services describe "$(get_cloudrun_name)" --format 'value(status.url)'
+get_task_entrypoint() {
+  if [ -z "$CUSTOM_ENTRYPOINT" ]; then
+    gcloud run services describe "$(get_cloudrun_name)" --format 'value(status.url)'
+  else
+    echo "$CUSTOM_ENTRYPOINT"
+  fi
 }
 
 get_cloudrun_name() {
@@ -375,30 +379,24 @@ create_temp_common_default() {
 
 _deploy() {
   create_temp_common_default
+  # if $CUSTOM_ENTRYPOINT is null, then deploy to cloudrun
+  if [ -z "$CUSTOM_ENTRYPOINT" ]; then
+    # build the image if FORCE_BUILD is true or docker image not exits,
+    local DOCKER_IMAGE_TAG=$(get_docker_image_tag)
+    local DOCKER_IMAGE_EXISTS=$(docker_image_exists_local "$DOCKER_IMAGE_TAG")
 
-  # build the image if FORCE_BUILD is true or docker image not exits,
-  local DOCKER_IMAGE_TAG=$(get_docker_image_tag)
-  local DOCKER_IMAGE_EXISTS=$(docker_image_exists_local "$DOCKER_IMAGE_TAG")
+    if [ "$FORCE_BUILD" = "true" ] || [ "$DOCKER_IMAGE_EXISTS" = "false" ]; then
+      echo "Building docker image..."
+      build_docker_image "$DOCKER_BUILD_ARGS"
+    else
+      echo "Docker image $DOCKER_IMAGE_TAG already exists. Skip building docker image."
+    fi
 
-  if [ "$FORCE_BUILD" = "true" ] || [ "$DOCKER_IMAGE_EXISTS" = "false" ]; then
-    echo "Building docker image..."
-    build_docker_image "$DOCKER_BUILD_ARGS"
-  else
-    echo "Docker image $DOCKER_IMAGE_TAG already exists. Skip building docker image."
+    push_docker_image
+    replace_cloudrun "$CLOUD_RUN_SERVICE_OVERRIDE_FILE"
   fi
 
-  push_docker_image
-  replace_cloudrun "$CLOUD_RUN_SERVICE_OVERRIDE_FILE"
-
-  create_topic
-  create_dead_letter_topic_and_subscription
-
-  # if $SUBSCRIPTION_FLAGS_FILE is normal file, use it
-  if [ -f "$SUBSCRIPTION_FLAGS_FILE" ]; then
-    create_subscription --flags-file "$SUBSCRIPTION_FLAGS_FILE"
-  else
-    create_subscription
-  fi
+  create_topic_and_subscription
 
   # if $USING_SCHEDULER == 'true' -> create scheduler
   if [ "$USING_SCHEDULER" = "true" ]; then
@@ -436,7 +434,9 @@ _undeploy() {
   delete_subscription
   delete_topic
 
-  delete_cloudrun
+  if [ "$COMMAND" == "undeploy" ]; then
+    delete_cloudrun
+  fi
 }
 
 check_container_healthy() {
@@ -456,59 +456,26 @@ gcloud_emulator_helper() {
     "$EMULATOR_SERVICE_NAME" pubsub-emulator-helper "$@"
 }
 
-_local() {
-  # when it terminates, background task also exits
-  set -e
-  trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+create_topic_and_subscription() {
+  create_topic
+  create_dead_letter_topic_and_subscription
 
-  local TOPIC_NAME="$(get_topic_name)"
-  local SUBSCRIPTION_NAME="$(get_subscription_name)"
-
-  local TASK_NAME="$(get_task_name)"
-  local PUSH_ENDPOINT="http://$TASK_NAME:8080"
-
-  local EMULATOR_CONTAINER_NAME="gcloud-pubsub-emulator"
-  local EMULATOR_IMAGE="asia-northeast3-docker.pkg.dev/fastcampus-web-services/cornerstone/gcloud-pubsub-emulator"
-  local PUBSUB_PROJECT_ID="fastcampus-web-services"
-  local TIMEOUT=30
-  local PORT=8085
-  local EMULATOR_SERVICE_NAME="gcloud-pubsub-emulator"
-
-  docker stop "$EMULATOR_CONTAINER_NAME" 2>/dev/null || :
-  export EMULATOR_IMAGE EMULATOR_CONTAINER_NAME PUBSUB_PROJECT_ID PORT
-
-  # run on background and wait for emulator to start
-  {
-    echo "Waiting for emulator to start..."
-
-    local COUNTER=0
-    until check_container_healthy $EMULATOR_CONTAINER_NAME; do
-      COUNTER=$((COUNTER + 1))
-      if [ "$COUNTER" -gt "$TIMEOUT" ]; then
-        echo "Timeout, exiting..."
-        exit 1
-      fi
-      sleep 1
-    done
-
-    gcloud_emulator_helper topic create "$TOPIC_NAME"
-
-    gcloud_emulator_helper topic list
-
-    echo "creating push subscription $SUBSCRIPTION_NAME"
-    gcloud_emulator_helper sub create-push -t "$TOPIC_NAME" "$SUBSCRIPTION_NAME" "$PUSH_ENDPOINT"
-  } &
-
-  docker compose \
-    -f "$TASK_DIR"/compose.yml \
-    -f "$DEPLOY_DIR"/gcloud-pubsub-emulator/compose.yml \
-    up \
-    gcloud-pubsub-emulator "$TASK_NAME"
-
+  # if $SUBSCRIPTION_FLAGS_FILE is normal file, use it
+  if [ -f "$SUBSCRIPTION_FLAGS_FILE" ]; then
+    create_subscription --flags-file "$SUBSCRIPTION_FLAGS_FILE"
+  else
+    create_subscription
+  fi
 }
 
-_local_publish() {
+ngrok_get_public_endpoint() {
+  local PORT=8080
+  ngrok api tunnels list | jq -r -c ".tunnels[] | select(.forwards_to | contains(\"$PORT\")) | .public_url"
+}
+
+_publish() {
   local TOPIC_NAME="$(get_topic_name)"
-  local MESSAGE="$1"
-  gcloud_emulator_helper topic publish "$TOPIC_NAME" "$MESSAGE"
+  local MESSAGE=$1
+  echo "Publishing Message: $MESSAGE to topic: $TOPIC_NAME"
+  gcloud pubsub topics publish "$TOPIC_NAME" --message "$MESSAGE"
 }

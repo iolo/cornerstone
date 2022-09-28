@@ -19,8 +19,9 @@ if [ "$COMMAND" = "help" ] || [ "$COMMAND" = "" ]; then
   echo "Available commands:"
   echo "  deploy - deploys the task to the specified environment"
   echo "  undeploy - undeploys the task from the specified environment"
-  echo "  local - runs the task locally"
-  echo "  local-publish - publish message locally"
+  echo "  publish - publish message"
+  echo "  mock - deploy for custom public endpoint (may use ngrok)"
+  echo "  unmock - undeploy for custom public endpoint"
   echo "  topic-info - displays the topic name for the task"
   echo "  urls - displays the URLs for the task"
   echo "  help - displays this help message"
@@ -65,13 +66,12 @@ if [ -f "$SCHEDULER_FLAGS_FILE" ]; then
 fi
 
 # $D1_ENV, $D1_SITE 변수는 필수값, 없으면 오류를 발생시킨다
-D1_ENVS=(development staging production qa)
 D1_SITES=(day1 fastcampus coloso colosous colosojp crater zerobase bemydoctor motiontribe lmsadmin b2bmarketing lxp
   mylight newspresso wannaspeak)
 
-if [ "$(validate_array_in "$D1_ENV" "${D1_ENVS[@]}")" != "true" ]; then
-  # shellcheck disable=SC2145
-  echo "D1_ENV is not valid. Valid values are ${D1_ENVS[@]}, but ${D1_ENV} is given."
+# D1_ENV 는 로컬에서 각 개발자 임의로 설정할 수 있기 때문에 값의 존재 여부만 판단한다.
+if [ -z "$D1_ENV" ]; then
+  echo "D1_ENV is not set. Please set D1_ENV in $TASK_ENV_FILE"
   exit 1
 fi
 
@@ -87,20 +87,34 @@ export D1_ENV D1_SITE
 popd >/dev/null
 
 pushd "$TASK_ROOT" >/dev/null
+
+shift
+shift
+
 if [ "$COMMAND" == "deploy" ]; then
   _deploy
-elif [ "$COMMAND" == "undeploy" ]; then
+elif [ "$COMMAND" == "undeploy" ] || [ "$COMMAND" == "unmock" ]; then
   _undeploy
 elif [ "$COMMAND" == "topic-info" ]; then
   get_topic_name
 elif [ "$COMMAND" == "urls" ]; then
   print_urls
-elif [ "$COMMAND" == "local" ]; then
-  _local
-elif [ "$COMMAND" == "local-publish" ]; then
-  _local_publish "$3"
-else
+elif [ "$COMMAND" == "publish" ]; then
+  _publish "$@"
+elif [ "$COMMAND" == "mock" ]; then
 
+  # if CUSTOM_ENDPOINT is not found, use ngrok
+  if [ -z "$CUSTOM_ENDPOINT" ]; then
+    echo "CUSTOM_ENDPOINT is not found. Use ngrok."
+    CUSTOM_ENTRYPOINT=$(ngrok_get_public_endpoint)
+    if [ -z "$CUSTOM_ENTRYPOINT" ]; then
+      echo "ngrok is not running. Please run ngrok first."
+      exit 1
+    fi
+  fi
+
+  _deploy
+else
   echo "Invalid command: $COMMAND"
   exit 1
 fi
