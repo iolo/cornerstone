@@ -152,13 +152,9 @@ create_scheduler() {
     MESSAGE_BODY_ARG="--message-body='$MESSAGE_BODY'"
   fi
 
-  gcloud scheduler jobs create http "$JOB_NAME" \
+  gcloud scheduler jobs create pubsub "$JOB_NAME" \
     --location "$X_CLOUDSDK_SCHEDULER_LOCATION" \
-    --attempt-deadline 300s \
-    --http-method post \
-    --uri "$ENTRYPOINT" \
-    --oidc-service-account-email="$OIDC_SERVICE_ACCOUNT_EMAIL" \
-    --oidc-token-audience="$ENTRYPOINT" \
+    --topic $TOPIC \
     $MESSAGE_BODY_ARG \
     $ARGS
 
