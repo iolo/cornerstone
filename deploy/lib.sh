@@ -411,9 +411,11 @@ _deploy() {
 }
 
 print_urls() {
-  echo "* Artifact Registry Container Image at 👉 $(get_artifact_registry_url)"
-  echo "* Cloud Run at 👉 $(get_cloudrun_url)"
-  echo "* Cloud Run Log at 👉 $(get_cloudrun_log_url)"
+  if [ "$COMMAND" == "deploy" ]; then
+    echo "* Artifact Registry Container Image at 👉 $(get_artifact_registry_url)"
+    echo "* Cloud Run at 👉 $(get_cloudrun_url)"
+    echo "* Cloud Run Log at 👉 $(get_cloudrun_log_url)"
+  fi
   echo "* Cloud Pub/Sub Topic at 👉 $(get_topic_url)"
   echo "* Cloud Pub/Sub Subscription at 👉 $(get_subscription_url)"
   if [ "$USING_SCHEDULER" = "true" ]; then
@@ -423,7 +425,7 @@ print_urls() {
 
 _undeploy() {
   # if $USING_SCHEDULER == 'true' -> create scheduler
-  if [[ "$USING_SCHEDULER" = "true" ]]; then
+  if [ "$USING_SCHEDULER" == "true" ]; then
     delete_scheduler
   fi
 
