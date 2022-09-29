@@ -102,18 +102,7 @@ elif [ "$COMMAND" == "urls" ]; then
 elif [ "$COMMAND" == "publish" ]; then
   _publish "$@"
 elif [ "$COMMAND" == "mock" ]; then
-
-  # if CUSTOM_ENDPOINT is not found, use ngrok
-  if [ -z "$CUSTOM_ENDPOINT" ]; then
-    echo "CUSTOM_ENDPOINT is not found. Use ngrok."
-    CUSTOM_ENTRYPOINT=$(ngrok_get_public_endpoint)
-    if [ -z "$CUSTOM_ENTRYPOINT" ]; then
-      echo "ngrok is not running. Please run ngrok first."
-      exit 1
-    fi
-  fi
-
-  _deploy
+  _mock
 else
   echo "Invalid command: $COMMAND"
   exit 1

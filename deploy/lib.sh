@@ -476,6 +476,21 @@ _publish() {
   gcloud pubsub topics publish "$TOPIC_NAME" --message "$MESSAGE"
 }
 
+_mock() {
+  # if CUSTOM_ENDPOINT is not found, use ngrok
+  if [ -z "$CUSTOM_ENDPOINT" ]; then
+    echo "CUSTOM_ENDPOINT is not found. Use ngrok."
+    CUSTOM_ENTRYPOINT=$(ngrok_get_public_endpoint)
+    if [ -z "$CUSTOM_ENTRYPOINT" ]; then
+      echo "ngrok is not running. Please run ngrok first."
+      exit 1
+    fi
+  fi
+
+  echo "Using CUSTOM_ENTRYPOINT: $CUSTOM_ENTRYPOINT"
+  _deploy
+}
+
 _info() {
   local TOPIC_NAME=$(get_topic_name)
   local TOPIC_EXISTS=$(topic_exists "$TOPIC_NAME" && echo "true" || echo "false")
