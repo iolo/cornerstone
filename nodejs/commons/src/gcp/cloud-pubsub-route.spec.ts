@@ -15,8 +15,8 @@ describe('cloud-pubsub-event-route', () => {
       const reply = { code: jest.fn(), send: jest.fn() } as unknown as FastifyReply;
       route.executeTask(request, reply).then(() => {
         setTimeout(() => {
-          expect(reply.code).toBeCalledWith(200);
-          expect(reply.send).toBeCalledWith('SUCCESS');
+          expect(reply.code).toBeCalledWith(202);
+          expect(reply.send).toBeCalledWith('ACCEPTED');
           expect(task.message).toBe(TEST_MESSAGE);
           done();
         }, 100);
