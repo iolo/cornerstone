@@ -18,15 +18,26 @@ export class CloudPubSubEventRoute<T> {
     const data = request.body.message.data;
     const message = data ? Buffer.from(data, 'base64').toString() : '';
     logger.info('accept request: body=%s, message=%s', request.body, message);
+
+    let parsed: T;
+    try {
+      parsed = JSON.parse(message);
+    } catch {
+      reply.code(400);
+      reply.send(`Bad Parameters: ${message}`);
+      return;
+    }
+
     setImmediate(() => {
       this.task
-        .execute(JSON.parse(message) as T)
+        .execute(parsed)
         .then(() => logger.debug('ok'))
         .catch((e) => logger.error('error', e));
     });
     reply.code(202);
     reply.send('ACCEPTED');
   }
+
   bindRoutes(server: FastifyInstance) {
     server.route({
       method: ENDPOINT_METHOD,

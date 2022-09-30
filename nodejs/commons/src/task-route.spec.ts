@@ -20,6 +20,20 @@ describe('task-route', () => {
         }, 100);
       });
     });
+
+    it('should fail', (done) => {
+      const task = new DummyTask();
+      const route = new TaskRoute(task);
+      const request = { query: { message: 'INVALID_JSON' } } as unknown as ExecuteTaskRequest;
+      const reply = { code: jest.fn(), send: jest.fn() } as unknown as FastifyReply;
+      route.executeTask(request, reply).then(() => {
+        setTimeout(() => {
+          expect(reply.code).toBeCalledWith(400);
+          expect(reply.send).toBeCalledWith('Bad Parameters: INVALID_JSON');
+          done();
+        }, 100);
+      });
+    });
   });
   describe('ping', () => {
     it('should work', (done) => {

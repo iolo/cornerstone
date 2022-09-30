@@ -17,7 +17,7 @@ export class TaskRoute<T> {
   constructor(readonly task: Task<T>) {}
 
   async executeTask(request: ExecuteTaskRequest, reply: FastifyReply) {
-    let message: any;
+    let message: T;
     try {
       message = JSON.parse(request.query.message);
     } catch (e) {
