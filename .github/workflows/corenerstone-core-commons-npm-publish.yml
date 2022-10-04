@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - nodejs/commons/**/*
     paths-ignore:
       - nodejs/commons/src/**/*.spec.ts
       - .github/**/*
