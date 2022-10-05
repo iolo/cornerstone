@@ -31,7 +31,7 @@ ngrok http 8080
 ngrok 서버가 실행된 후 새로운 쉘에서 다음 명령을 보내면 API 응답을 받을 수 있습니다.
 
 ```
-ngrok config add-api-key $발급받은API키
+ngrok api tunnels list 
 ```
 
 ```
