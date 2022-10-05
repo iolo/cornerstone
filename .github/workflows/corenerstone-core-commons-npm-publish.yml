@@ -6,11 +6,10 @@ on:
   push:
     branches:
       - main
+      - fix/workflow-push-path
     paths:
-      - nodejs/commons/**/*
-    paths-ignore:
-      - nodejs/commons/src/**/*.spec.ts
-      - .github/**/*
+      - 'nodejs/commons/**/*'
+      - '!*.spec.ts'
 
 defaults:
   run:
@@ -18,8 +17,6 @@ defaults:
     shell: bash
 
 env:
-  PUSH_TOKEN: ${{ secrets.NPM_TOKEN }}
-  PACKAGE_TOKEN: ${{ secrets.NPM_TOKEN }}
   WORKING_DIRECTORY: 'nodejs/commons'
 
 jobs:
@@ -50,7 +47,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 100 # 최근 100개 커밋에서 package.json 버전변경 확인
-          token: ${{ env.PUSH_TOKEN }}
+          token: ${{ secrets.NPM_TOKEN }}
 
       - name: Prepare
         uses: day1co/actions/composites/prepare-node@main
@@ -80,7 +77,6 @@ jobs:
           git commit -m "$PACKAGE_NAME: bump up to $PACKAGE_VERSION"$'\n'"[ci skip]" $GITHUB_WORKSPACE
           git pull --rebase
           git push origin
-
       - name: publish
         run: |
           npm ci
