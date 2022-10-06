@@ -93,6 +93,7 @@ shift
 
 if [ "$COMMAND" == "deploy" ]; then
   _deploy
+  print_urls
 elif [ "$COMMAND" == "undeploy" ] || [ "$COMMAND" == "unmock" ]; then
   _undeploy
 elif [ "$COMMAND" == "info" ]; then
