@@ -313,7 +313,7 @@ delete_scheduler() {
 
   if scheduler_exists "$JOB_NAME"; then
     echo "Scheduler $JOB_NAME exists. Deleting..."
-    gcloud scheduler jobs delete "$JOB_NAME" --location "$X_CLOUDSDK_SCHEDULER_LOCATION"
+    gcloud scheduler jobs delete "$JOB_NAME" --location "$X_CLOUDSDK_SCHEDULER_LOCATION" --quiet
   else
     echo "Scheduler $JOB_NAME exists. Skipping deletion..."
   fi
@@ -322,7 +322,7 @@ delete_scheduler() {
 delete_cloudrun() {
   if cloudrun_exists "$(get_cloudrun_name)"; then
     echo "Cloud Run service $(get_cloudrun_name) exists. Deleting..."
-    gcloud run services delete "$(get_cloudrun_name)"
+    gcloud run services delete "$(get_cloudrun_name)" --quiet
   else
     echo "Cloud Run service $(get_cloudrun_name) not exists."
   fi
