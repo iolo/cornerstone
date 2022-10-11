@@ -4,6 +4,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Task } from '../task';
 import type { CloudPubSubEvent } from './cloud-pubsub-event';
 import { ENDPOINT_METHOD, ENDPOINT_PATH } from './run';
+import { PublishingMessage } from '@day1co/cornerstone-client/lib';
 
 const logger = LoggerFactory.getLogger('cornerstone-commons:gcp:cloud-pubsub-event-route');
 
@@ -21,7 +22,8 @@ export class CloudPubSubEventRoute<T> {
 
     let parsed: T;
     try {
-      parsed = JSON.parse(message);
+      const publishedMessage = <PublishingMessage<T>>JSON.parse(message);
+      parsed = publishedMessage.message;
     } catch {
       reply.code(400);
       reply.send(`Bad Parameters: ${message}`);

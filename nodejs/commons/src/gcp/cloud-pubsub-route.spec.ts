@@ -6,7 +6,7 @@ import { DummyTask } from '../dummy-task';
 describe('cloud-pubsub-event-route', () => {
   describe('executeTask', () => {
     it('should work', (done) => {
-      const TEST_MESSAGE = 'hello';
+      const TEST_MESSAGE = { message: 'hello' };
       const task = new DummyTask();
       const route = new CloudPubSubEventRoute(task);
       const request = {
