@@ -18,7 +18,7 @@ export class CloudPubSubEventRoute<T> {
   async executeTask(request: ExecuteTaskRequest, reply: FastifyReply) {
     const data = request.body.message.data;
     const message = data ? Buffer.from(data, 'base64').toString() : '';
-    logger.info('accept request: body=%s, message=%s', request.body, message);
+    logger.info('accept request: body=%o, message=%s', request.body, message);
 
     let parsed: T;
     try {
