@@ -43,10 +43,8 @@ CUSTOM_ENTRYPOINT="http://example.com/" ./ctask mock ./nodejs-sample/deploy/depl
 메시지는 JSON 형식이어야 합니다.
 
 ```shell
-./ctask publish ./nodejs-sample/deploy/deploy-dev.env '"hello world"'
+./ctask publish ./nodejs-sample/deploy/deploy-dev.env '{"message": "hello world"}'
 ```
-
-위 예제에서 `hello world` 는 문자열 이므로 `""` 으로 감쌌고, 쉘에서 `""` 를 문자열 파싱에 사용하는 것을 막기 위해 다시 `''` 로 감쌌습니다.
 
 ## 배포(`deploy`)
 
