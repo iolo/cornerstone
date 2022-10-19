@@ -64,7 +64,7 @@ export class SampleTask implements Task<string> {
 
 ## Scheduler 의 message body 에서의 사용법
 
-이번에는 scheduler 의 message body 에인해봅니다.
+이번에는 scheduler 의 message body 에서 확인해봅니다. 
 
 스케줄러 flags-file 의 `--message-body` 항목을 수정합니다.
 실제 사용할 오브젝트가 `"hello"` 라면, 이 오브젝트를 `message` 키에 넣도록 합니다.
