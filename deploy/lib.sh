@@ -145,17 +145,9 @@ create_scheduler() {
     echo "Scheduler $JOB_NAME does not exist. Creating..."
   fi
 
-  if [ -n "$SCHEDULER_MESSAGE_BODY" ]; then
-    SCHEDULER_MESSAGE_BODY=$(base64 <<<"$SCHEDULER_MESSAGE_BODY")
-    # JSON string 을 만들 때 공백이 없어야 한다
-    MESSAGE_BODY=$(printf '{"message":{"data":"%s"}}' "$SCHEDULER_MESSAGE_BODY")
-    MESSAGE_BODY_ARG="--message-body='$MESSAGE_BODY'"
-  fi
-
   gcloud scheduler jobs create pubsub "$JOB_NAME" \
     --location "$X_CLOUDSDK_SCHEDULER_LOCATION" \
     --topic $TOPIC \
-    $MESSAGE_BODY_ARG \
     $ARGS
 
 }
