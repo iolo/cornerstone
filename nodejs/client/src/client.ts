@@ -13,10 +13,17 @@ export class Client {
   }
 
   /**
-   * @param topicName - Task Topic Name
+   * @param taskName
+   * @param environment
+   * @param site
    */
-  getStub(topicName: string): <T>(message: T) => string {
+  getStub(
+    taskName: string,
+    environment: string,
+    site: string
+  ): <T>(message: T) => string {
     return <T>(message: T): string => {
+      const topicName = Client.getTopicName(taskName, environment, site);
       const requestId = `${topicName}:${StringUtil.getNonce(32, 36)}`;
 
       const publishingMessage: PublishingMessage<T> = {
@@ -25,7 +32,6 @@ export class Client {
       };
 
       const publishingMessageString = JSON.stringify(publishingMessage);
-
       this.bus.publish(topicName, publishingMessageString, false);
 
       this.logger.info(`cornerstone task requested: ${requestId}`);
@@ -40,5 +46,26 @@ export class Client {
 
   destroy(): void {
     this.bus.destroy();
+  }
+
+  private static shortenEnvName(environment: string) {
+    switch (environment) {
+      case "development":
+        return "dev";
+      case "production":
+        return "prod";
+      case "staging":
+        return "stg";
+      default:
+        return environment;
+    }
+  }
+
+  private static getTopicName(
+    taskName: string,
+    environment: string,
+    site: string
+  ) {
+    return `topic-cs-${Client.shortenEnvName(environment)}-${site}-${taskName}`;
   }
 }

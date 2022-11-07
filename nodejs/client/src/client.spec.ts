@@ -21,13 +21,13 @@ describe("Client", () => {
       bus.publish = jest.fn();
       const logger = LoggerFactory.getLogger("cornerstone-commons:client");
       const client = new Client({ logger, bus });
-      const topicName = "topicName";
+      const taskName = "task-name";
 
-      const testStub = client.getStub(topicName);
+      const testStub = client.getStub(taskName, "test", "day1co");
       const requestId = testStub({ message: "message" });
       expect(requestId).toBeDefined();
       expect(bus.publish).toBeCalledWith(
-        topicName,
+        "topic-cs-test-day1co-task-name",
         JSON.stringify({ message: { message: "message" }, requestId }),
         false
       );
