@@ -30,7 +30,7 @@ export class TaskRoute<T> {
       this.task
         .execute(message)
         .then(() => logger.debug('ok'))
-        .catch((e: Error) => logger.error('error', e));
+        .catch((e: Error) => logger.error('error: %o', e));
     });
     reply.code(202);
     reply.send('ACCEPTED');

@@ -34,7 +34,7 @@ export class CloudPubSubEventRoute<T> {
       this.task
         .execute(parsed)
         .then(() => logger.debug('ok'))
-        .catch((e) => logger.error('error', e));
+        .catch((e) => logger.error('error: %o', e));
     });
     reply.code(202);
     reply.send('ACCEPTED');
