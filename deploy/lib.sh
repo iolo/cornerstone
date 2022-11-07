@@ -27,7 +27,8 @@ topic_exists() {
 
 get_topic_name() {
   local TASK_NAME=$(get_task_name)
-  echo "topic-cornerstone-${D1_ENV}-${D1_SITE}-${TASK_NAME}"
+  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
+  echo "topic-cs-${SHORT_ENV_NAME}-${D1_SITE}-${TASK_NAME}"
 }
 
 get_topic_url() {
@@ -61,8 +62,8 @@ subscription_exists() {
 
 get_subscription_name() {
   local TASK_NAME=$(get_task_name)
-
-  echo "sub-cornerstone-${D1_ENV}-${D1_SITE}-${TASK_NAME}"
+  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
+  echo "sub-cs-${SHORT_ENV_NAME}-${D1_SITE}-${TASK_NAME}"
 }
 
 get_subscription_url() {
@@ -118,7 +119,8 @@ scheduler_exists() {
 }
 
 get_scheduler_name() {
-  echo "scheduler-${D1_ENV}-${D1_SITE}-$(get_task_name)"
+  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
+  echo "scheduler-${SHORT_ENV_NAME}-${D1_SITE}-$(get_task_name)"
 }
 
 get_scheduler_url() {
@@ -213,7 +215,8 @@ get_task_entrypoint() {
 }
 
 get_cloudrun_name() {
-  echo "run-cornerstone-${D1_ENV}-${D1_SITE}-$(get_task_name)"
+  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
+  echo "run-cs-${SHORT_ENV_NAME}-${D1_SITE}-$(get_task_name)"
 }
 
 cloudrun_exists() {
@@ -326,11 +329,13 @@ send_message_to_pubsub() {
 
 get_dead_letter_topic_name() {
   local TASK_NAME=$(get_task_name)
-  echo "topic-cornerstone-${D1_ENV}-${D1_SITE}-dead-letter"
+  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
+  echo "topic-cs-${SHORT_ENV_NAME}-${D1_SITE}-dead-letter"
 }
 
 get_dead_letter_subscription_name() {
-  echo "sub-cornerstone-${D1_ENV}-${D1_SITE}-dead-letter"
+  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
+  echo "sub-cs-${SHORT_ENV_NAME}-${D1_SITE}-dead-letter"
 }
 
 # Public: Dead Letter 토픽이 없는 경우 생성한다
@@ -457,6 +462,27 @@ create_topic_and_subscription() {
 ngrok_get_public_endpoint() {
   local PORT=8080
   ngrok api tunnels list | jq -r -c ".tunnels[] | select(.forwards_to | contains(\"$PORT\")) | .public_url"
+}
+
+shorten_environment_name() {
+  # if development, return dev
+  # if staging, return stg
+  # if production, return prd
+  # else, return $1
+  case "$1" in
+  "development")
+    echo "dev"
+    ;;
+  "staging")
+    echo "stg"
+    ;;
+  "production")
+    echo "prd"
+    ;;
+  *)
+    echo "$1"
+    ;;
+  esac
 }
 
 _publish() {
