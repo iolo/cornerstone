@@ -1,6 +1,6 @@
 {
   "name": "@day1co/cornerstone-commons",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "author": "Day1Company",
   "main": "./lib/index.js",
   "types": "./lib/index.d.js",
