@@ -30,12 +30,12 @@ export class CloudPubSubEventRoute<T> {
       return;
     }
 
-    setImmediate(() => {
-      this.task
-        .execute(parsed)
-        .then(() => logger.debug('ok'))
-        .catch((e) => logger.error('error: %o', e));
-    });
+    try {
+      await this.task.execute(parsed);
+      logger.debug('ok');
+    } catch (e) {
+      logger.error('error: %o', e);
+    }
     reply.code(202);
     reply.send('ACCEPTED');
   }
