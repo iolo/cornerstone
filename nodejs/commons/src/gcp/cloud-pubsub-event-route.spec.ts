@@ -6,11 +6,11 @@ import { DummyTask } from '../dummy-task';
 describe('cloud-pubsub-event-route', () => {
   describe('executeTask', () => {
     it('should work', (done) => {
-      const TEST_MESSAGE = { message: 'hello' };
+      const TEST_MESSAGE = 'hello';
       const task = new DummyTask();
       const route = new CloudPubSubEventRoute(task);
       const request = {
-        body: { message: { data: Buffer.from(JSON.stringify(TEST_MESSAGE), 'utf8').toString('base64') } },
+        body: { message: { data: Buffer.from(JSON.stringify({ message: TEST_MESSAGE }), 'utf8').toString('base64') } },
       } as unknown as ExecuteTaskRequest;
       const reply = { code: jest.fn(), send: jest.fn() } as unknown as FastifyReply;
       route.executeTask(request, reply).then(() => {
