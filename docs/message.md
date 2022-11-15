@@ -14,7 +14,8 @@ const bus = new FastBus({}, BusType.LOCAL);
 const client = new Client({logger, bus});
 
 // stub 를 얻어서
-const updateEnrollmentState = client.getStub('updateEnrollmentState');
+const updateEnrollmentState = client.getStub('update-enrollment-state', 'development', 'day1co'); 
+// 'update-enrollment-state': 태스크 이름
 
 // 메시지를 보낸다
 const message = {state: 'NORMAL'};
