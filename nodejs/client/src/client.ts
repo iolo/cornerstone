@@ -53,7 +53,7 @@ export class Client {
       case "development":
         return "dev";
       case "production":
-        return "prod";
+        return "prd";
       case "staging":
         return "stg";
       default:
