@@ -9,14 +9,16 @@ ngrok 은 외부 인터넷에서 로컬 서버에 접속할 수 있도록 해주
 
 ## 회원가입 및 API 획득
 
-ngrok 의 API Token을 사용하기 위해 회원가입과 API 토큰 획득이 필요합니다.
+ngrok 의 회원가입과 Auth 토큰 획득, API 토큰 획득이 필요합니다.
 
 * 회원가입 : [https://dashboard.ngrok.com/signup](https://dashboard.ngrok.com/signup)
-* API 토큰 획득 : [https://dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
+* **Auth 토큰** 획득 : [https://dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
+* **API 토큰** 획득 : https://dashboard.ngrok.com/api
 
 ## ngrok config 에 토큰 설치 
 
 ```shell
+ngrok config add-authtoken $발급받은AUTH키
 ngrok config add-api-key $발급받은API키
 ```
 
