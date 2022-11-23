@@ -425,7 +425,7 @@ _undeploy() {
   delete_subscription
   delete_topic
 
-  if [ "$COMMAND" == "undeploy" ]; then
+  if [ "$COMMAND" == "undeploy" ]  || [ "$COMMAND" == "redeploy" ]; then
     delete_cloudrun
   fi
 }

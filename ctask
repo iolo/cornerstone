@@ -19,6 +19,7 @@ if [ "$COMMAND" = "help" ] || [ "$COMMAND" = "" ]; then
   echo "Available commands:"
   echo "  deploy - deploys the task to the specified environment"
   echo "  undeploy - undeploys the task from the specified environment"
+  echo "  redeploy - same as undeplay && deploy"
   echo "  publish - publish message"
   echo "  mock - deploy for custom public endpoint (may use ngrok)"
   echo "  unmock - undeploy for custom public endpoint"
@@ -96,6 +97,10 @@ if [ "$COMMAND" == "deploy" ]; then
   print_urls
 elif [ "$COMMAND" == "undeploy" ] || [ "$COMMAND" == "unmock" ]; then
   _undeploy
+elif [ "$COMMAND" == "redeploy" ]; then
+  _undeploy
+  _deploy
+  print_urls
 elif [ "$COMMAND" == "info" ]; then
   _info
 elif [ "$COMMAND" == "urls" ]; then
