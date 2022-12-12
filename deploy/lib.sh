@@ -260,8 +260,21 @@ replace_cloudrun() {
 
   if [ -f "$OVERRIDE_FILE_PATH" ]; then
     echo "Override file $OVERRIDE_FILE_PATH exists. Merging..."
-    yq ea 'select(fileIndex == 0) *d select(fileIndex == 1)' "$DEFAULT_FILE_PATH" \
-      "$OVERRIDE_FILE_PATH" | envsubst >"$OUTFILE_PATH"
+
+    echo "$(yq ea 'select(fileIndex == 0) *d select(fileIndex == 1)' \
+    "$DEFAULT_FILE_PATH" "$OVERRIDE_FILE_PATH")" > $OVERRIDE_FILE_PATH
+
+    # yq eval-all의 deep merge는 배열 안의 객체에는 적용되지 않는다.
+    # see https://mikefarah.gitbook.io/yq/operators/multiply-merge#merge-arrays-of-objects-together-matching-on-a-key
+    ENV_NAME_KEY=".name"  ENV_ARRAY=".spec.template.spec.containers.[].env" \
+    yq ea '
+      (  (( eval(strenv(ENV_ARRAY)) | .[] | {(eval(strenv(ENV_NAME_KEY))): .}) as $item ireduce ({}; . * $item )) as $ENV_MAP
+        | ( $ENV_MAP | to_entries | .[]) as $item ireduce([]; . + $item.value)
+      ) as $MERGED_ENV_ARRAY 
+      | select(fileIndex == 0) | (eval(strenv(ENV_ARRAY))) = $MERGED_ENV_ARRAY
+    ' "$OVERRIDE_FILE_PATH" "$DEFAULT_FILE_PATH" \
+    | envsubst > "$OUTFILE_PATH"
+
   else
     echo "Override file $OVERRIDE_FILE_PATH does not exist. Using default..."
     envsubst <"$DEFAULT_FILE_PATH" >"$OUTFILE_PATH"
