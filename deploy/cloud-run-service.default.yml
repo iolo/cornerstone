@@ -26,6 +26,8 @@ spec:
               value: ${D1_SITE}
             - name: BUILD_ID
               value: ${BUILD_ID}
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: ${SPRING_CLOUD_CONFIG_URI}
           ports:
             - containerPort: 8080
               name: http1
