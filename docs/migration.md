@@ -53,9 +53,6 @@ const job = {
 CLOUD_RUN_SERVICE_OVERRIDE_FILE="./cloud-run-service.override.yml"
 ```
 
-배열 안에 있는 오브젝트를 머지하는 데 한계가 있습니다. 
-따라서 `containers[0].resource` 는 일부만 변경되더라도 모두 다시 지정해야 합니다.
-
 ```yaml 
 # cloud-run-service.override.yml 파일 
 
