@@ -1,0 +1,16 @@
+{
+  "name": "@day1co/cornerstone-cli",
+  "version": "0.0.2",
+  "author": "Day1Company",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/day1co/cornerstone.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "bin": {
+    "ctask": "ctask"
+  },
+  "files": "deploy"
+}
