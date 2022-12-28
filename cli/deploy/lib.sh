@@ -256,13 +256,14 @@ replace_cloudrun() {
   export D1_ENV D1_SITE CLOUD_RUN_NAME BUILD_ID IMAGE
 
   local DATE=$(date '+%Y%m%d_%H%M%S')
+  local TEMP_OVERRIDE_FILE_PATH="$DEPLOY_DIR/.override.tmp.yml"
   local OUTFILE_PATH="./deploy/cloud-run-service.$DATE.yml"
 
   if [ -f "$OVERRIDE_FILE_PATH" ]; then
     echo "Override file $OVERRIDE_FILE_PATH exists. Merging..."
 
     echo "$(yq ea 'select(fileIndex == 0) *d select(fileIndex == 1)' \
-    "$DEFAULT_FILE_PATH" "$OVERRIDE_FILE_PATH")" > $OVERRIDE_FILE_PATH
+    "$DEFAULT_FILE_PATH" "$OVERRIDE_FILE_PATH")" > $TEMP_OVERRIDE_FILE_PATH
 
     # yq eval-all의 deep merge는 배열 안의 객체에는 적용되지 않는다.
     # see https://mikefarah.gitbook.io/yq/operators/multiply-merge#merge-arrays-of-objects-together-matching-on-a-key
@@ -272,7 +273,7 @@ replace_cloudrun() {
         | ( $ENV_MAP | to_entries | .[]) as $item ireduce([]; . + $item.value)
       ) as $MERGED_ENV_ARRAY 
       | select(fileIndex == 0) | (eval(strenv(ENV_ARRAY))) = $MERGED_ENV_ARRAY
-    ' "$OVERRIDE_FILE_PATH" "$DEFAULT_FILE_PATH" \
+    ' "$TEMP_OVERRIDE_FILE_PATH" "$DEFAULT_FILE_PATH" \
     | envsubst > "$OUTFILE_PATH"
 
   else

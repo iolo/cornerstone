@@ -5,3 +5,5 @@ terraform_iam.json
 .terraform
 .terraform.lock.hcl
 resource.tf
+
+**/deploy/*.tmp.yml
