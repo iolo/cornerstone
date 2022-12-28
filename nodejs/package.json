@@ -1,0 +1,8 @@
+{
+  "name": "cornerstone-nodejs",
+  "workspaces": [
+    "common",
+    "client",
+    "starter"
+  ]
+}
