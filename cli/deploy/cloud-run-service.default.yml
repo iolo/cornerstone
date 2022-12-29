@@ -35,17 +35,7 @@ spec:
             limits:
               cpu: 1000m
               memory: 512Mi
-          volumeMounts:
-            - mountPath: /env
-              name: deimos-env-volume
       timeoutSeconds: 300
-      volumes:
-        - name: deimos-env-volume
-          secret:
-            items:
-              - key: latest
-                path: .env
-            secretName: config-deimos
   traffic:
     - latestRevision: true
       percent: 100
