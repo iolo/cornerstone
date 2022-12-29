@@ -29,13 +29,8 @@ if [ "$COMMAND" = "help" ] || [ "$COMMAND" = "" ]; then
   exit 0
 fi
 
-# see https://stackoverflow.com/questions/3572030/bash-script-absolute-path-with-os-x
-realpath() {
-  [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
-
-DEPLOY_DIR="$(dirname -- $(realpath "$0"))/deploy"
-TASK_ENV_DIR=$(dirname -- $(realpath "$2"))
+DEPLOY_DIR="$(dirname -- $(readlink -f "$0"))/deploy"
+TASK_ENV_DIR=$(dirname -- $(readlink -f "$2"))
 TASK_DIR=$(dirname -- "${TASK_ENV_DIR}")
 TASK_ENV_FILE=$(basename -- "$2")
 
@@ -55,15 +50,15 @@ source "$TASK_ENV_FILE"
 export CLOUDSDK_CORE_PROJECT CLOUDSDK_RUN_REGION CLOUDSDK_ARTIFACTS_LOCATION
 
 if [ -f "$CLOUD_RUN_SERVICE_OVERRIDE_FILE" ]; then
-  CLOUD_RUN_SERVICE_OVERRIDE_FILE=$(realpath "$CLOUD_RUN_SERVICE_OVERRIDE_FILE")
+  CLOUD_RUN_SERVICE_OVERRIDE_FILE=$(readlink -f "$CLOUD_RUN_SERVICE_OVERRIDE_FILE")
 fi
 
 if [ -f "$SUBSCRIPTION_FLAGS_FILE" ]; then
-  SUBSCRIPTION_FLAGS_FILE=$(realpath "$SUBSCRIPTION_FLAGS_FILE")
+  SUBSCRIPTION_FLAGS_FILE=$(readlink -f "$SUBSCRIPTION_FLAGS_FILE")
 fi
 
 if [ -f "$SCHEDULER_FLAGS_FILE" ]; then
-  SCHEDULER_FLAGS_FILE=$(realpath "$SCHEDULER_FLAGS_FILE")
+  SCHEDULER_FLAGS_FILE=$(readlink -f "$SCHEDULER_FLAGS_FILE")
 fi
 
 # $D1_ENV, $D1_SITE 변수는 필수값, 없으면 오류를 발생시킨다
