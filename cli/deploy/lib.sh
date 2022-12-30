@@ -1,18 +1,5 @@
 #!/bin/bash
 
-validate_array_in() {
-  NEEDLE=$1
-  shift
-  HAYSTACK=$@
-
-  for item in $HAYSTACK; do
-    if [ "$item" = "$NEEDLE" ]; then
-      echo "true"
-      return
-    fi
-  done
-}
-
 git_commit_id() {
   git rev-parse HEAD
 }
@@ -25,27 +12,18 @@ topic_exists() {
   return $?
 }
 
-get_topic_name() {
-  local TASK_NAME=$(get_task_name)
-  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
-  echo "topic-cs-${SHORT_ENV_NAME}-${D1_SITE}-${TASK_NAME}"
-}
-
 get_topic_url() {
-  local TOPIC_NAME=$(get_topic_name)
   echo "https://console.cloud.google.com/cloudpubsub/topic/detail/${TOPIC_NAME}?project=${CLOUDSDK_CORE_PROJECT}"
 }
 
 # Public: 토픽이 없는 경우 생성한다
 create_topic() {
-  local TOPIC_NAME=$(get_topic_name)
-
   if topic_exists "$TOPIC_NAME"; then
     echo "Topic $TOPIC_NAME already exists. Skip creating topic."
   else
     echo "Topic $TOPIC_NAME does not exist. Creating..."
     gcloud pubsub topics create "$TOPIC_NAME" \
-      --flags-file="$DEPLOY_DIR/.common.default.tmp.yml"
+      ${GCLOUD_CLI_LABEL_OPTS}
   fi
 
   return $?
@@ -60,14 +38,7 @@ subscription_exists() {
   return $?
 }
 
-get_subscription_name() {
-  local TASK_NAME=$(get_task_name)
-  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
-  echo "sub-cs-${SHORT_ENV_NAME}-${D1_SITE}-${TASK_NAME}"
-}
-
 get_subscription_url() {
-  local SUBSCRIPTION_NAME=$(get_subscription_name)
   echo "https://console.cloud.google.com/cloudpubsub/subscription/detail/${SUBSCRIPTION_NAME}?project=${CLOUDSDK_CORE_PROJECT}"
 }
 
@@ -80,22 +51,18 @@ get_subscription_url() {
 # shellcheck disable=SC2120
 create_subscription() {
   local ARGS="$@"
-  local TASK_NAME="$(get_task_name)"
   local ENTRYPOINT="$(get_task_entrypoint)"
-  local TOPIC_NAME="$(get_topic_name)"
-  local SUBSCRIPTION="$(get_subscription_name)"
-  local DEAD_LETTER_TOPIC_NAME="$(get_dead_letter_topic_name)"
   local ACK_DEADLINE=300
   local MAX_DELIVERY_ATTEMPTS=5
 
-  if subscription_exists "$SUBSCRIPTION"; then
-    echo "Subscription $SUBSCRIPTION already exists. Updating.."
-    gcloud pubsub subscriptions update "$SUBSCRIPTION" \
+  if subscription_exists "$SUBSCRIPTION_NAME"; then
+    echo "Subscription $SUBSCRIPTION_NAME already exists. Updating.."
+    gcloud pubsub subscriptions update "$SUBSCRIPTION_NAME" \
       --push-endpoint="$ENTRYPOINT"
   else
-    echo "Subscription $SUBSCRIPTION does not exist. Creating..."
-    gcloud pubsub subscriptions create "$SUBSCRIPTION" \
-      --flags-file="$DEPLOY_DIR/.common.default.tmp.yml" \
+    echo "Subscription $SUBSCRIPTION_NAME does not exist. Creating..."
+    gcloud pubsub subscriptions create "$SUBSCRIPTION_NAME" \
+      ${GCLOUD_CLI_LABEL_OPTS} \
       --topic "$TOPIC_NAME" \
       --ack-deadline "$ACK_DEADLINE" \
       --push-endpoint="$ENTRYPOINT" \
@@ -116,13 +83,8 @@ scheduler_exists() {
   return $?
 }
 
-get_scheduler_name() {
-  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
-  echo "scheduler-${SHORT_ENV_NAME}-${D1_SITE}-$(get_task_name)"
-}
-
 get_scheduler_url() {
-  echo "https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_scheduler_job%22%20AND%20resource.labels.job_id%3D%22$(get_scheduler_name)%22%20AND%20resource.labels.location%3D%22${X_CLOUDSDK_SCHEDULER_LOCATION}%22?project=${CLOUDSDK_CORE_PROJECT}"
+  echo "https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_scheduler_job%22%20AND%20resource.labels.job_id%3D%22${SCHEDULER_NAME}%22%20AND%20resource.labels.location%3D%22${X_CLOUDSDK_SCHEDULER_LOCATION}%22?project=${CLOUDSDK_CORE_PROJECT}"
 }
 
 # Public: 스케줄러가 없는 경우 생성한다
@@ -133,37 +95,32 @@ get_scheduler_url() {
 #
 create_scheduler() {
   local ARGS="$@"
-  local JOB_NAME="$(get_scheduler_name)"
   local ENTRYPOINT="$(get_task_entrypoint)"
-  local TOPIC_NAME="$(get_topic_name)"
   local TOPIC="projects/${CLOUDSDK_CORE_PROJECT}/topics/$TOPIC_NAME"
 
-  if scheduler_exists "$JOB_NAME"; then
-    echo "Scheduler $JOB_NAME already exists. Replacing..."
-    gcloud scheduler jobs delete "$JOB_NAME" --location "$X_CLOUDSDK_SCHEDULER_LOCATION" -q
+  if scheduler_exists "${SCHEDULER_NAME}"; then
+    echo "Scheduler ${SCHEDULER_NAME} already exists. Replacing..."
+    gcloud scheduler jobs delete "${SCHEDULER_NAME}" --location "$X_CLOUDSDK_SCHEDULER_LOCATION" -q
   else
-    echo "Scheduler $JOB_NAME does not exist. Creating..."
+    echo "Scheduler ${SCHEDULER_NAME} does not exist. Creating..."
   fi
 
-  gcloud scheduler jobs create pubsub "$JOB_NAME" \
-    --location "$X_CLOUDSDK_SCHEDULER_LOCATION" \
-    --topic $TOPIC \
-    $ARGS
-
-}
-
-get_task_name() {
-  _TASK_NAME="${TASK_NAME:-$(basename "$PWD")}"
-  echo "$_TASK_NAME"
+  if [ "$USING_PUBSUB" = "true" ]; then
+    gcloud scheduler jobs create pubsub "${SCHEDULER_NAME}" \
+      --location "$X_CLOUDSDK_SCHEDULER_LOCATION" \
+      --topic $TOPIC \
+      $ARGS
+  else
+    gcloud scheduler jobs create http "${SCHEDULER_NAME}" \
+      --location="$X_CLOUDSDK_SCHEDULER_LOCATION" \
+      --uri="$ENTRYPOINT" \
+      $ARGS
+  fi
 }
 
 get_docker_image_tag() {
-  local _HOST="$DOCKER_REGISTRY_HOST"
-  local _PROJECT="$CLOUDSDK_CORE_PROJECT"
-  local _REGISTRY="cornerstone-tasks"
-  local _SERVICE="${SERVICE:-$(get_task_name)}"
   local _VERSION="$(git_commit_id)"
-  echo "$_HOST/$_PROJECT/$_REGISTRY/$_SERVICE:$_VERSION"
+  echo "${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_PATH}/${TASK_NAME}:${_VERSION}"
 }
 
 docker_image_exists_local() {
@@ -183,12 +140,9 @@ docker_image_exists_local() {
 #  build_docker_image --build-arg BUILD_ARG=1 --build-arg BUILD_ARG2=2
 #
 build_docker_image() {
-  local DOCKER_IMAGE_TAG="$(get_docker_image_tag)"
-  local TASK_NAME="$(get_task_name)"
-
+  export IMAGE_TAG="$(get_docker_image_tag)"
   # ARM 환경에서 빌드된 것이 배포되지 않도록 platform 은 linux/amd64 로 고정
   export DOCKER_DEFAULT_PLATFORM=linux/amd64
-  export IMAGE_TAG="$DOCKER_IMAGE_TAG"
 
   docker compose build "$TASK_NAME"
   unset DOCKER_DEFAULT_PLATFORM
@@ -200,35 +154,27 @@ push_docker_image() {
 
 get_artifact_registry_url() {
   local DIGEST=$(docker inspect $(get_docker_image_tag) | jq -r '.[0].RepoDigests[0]' | sed -e "s|.*@||g")
-  local TASK_NAME="$(get_task_name)"
   echo "https://console.cloud.google.com/artifacts/docker/${CLOUDSDK_CORE_PROJECT}/${CLOUDSDK_ARTIFACTS_LOCATION}/cornerstone-tasks/${TASK_NAME}/${DIGEST}?project=${CLOUDSDK_CORE_PROJECT}"
 }
 
 get_task_entrypoint() {
   if [ -z "$CUSTOM_ENTRYPOINT" ]; then
-    gcloud run services describe "$(get_cloudrun_name)" --format 'value(status.url)'
+    gcloud run services describe "${CLOUD_RUN_NAME}" --format 'value(status.url)'
   else
     echo "$CUSTOM_ENTRYPOINT"
   fi
 }
 
-get_cloudrun_name() {
-  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
-  echo "run-cs-${SHORT_ENV_NAME}-${D1_SITE}-$(get_task_name)"
-}
-
 cloudrun_exists() {
-  gcloud run services describe "$(get_cloudrun_name)" 1>/dev/null 2>/dev/null
+  gcloud run services describe "${CLOUD_RUN_NAME}" 1>/dev/null 2>/dev/null
   return $?
 }
 
 get_cloudrun_url() {
-  local CLOUD_RUN_NAME="$(get_cloudrun_name)"
   echo "https://console.cloud.google.com/run/detail/${CLOUDSDK_RUN_REGION}/${CLOUD_RUN_NAME}/metrics?project=${CLOUDSDK_CORE_PROJECT}"
 }
 
 get_cloudrun_log_url() {
-  local CLOUD_RUN_NAME="$(get_cloudrun_name)"
   echo "https://console.cloud.google.com/logs/query;query=resource.type%3D"cloud_run_revision"%0Aresource.labels.service_name%3D"${CLOUD_RUN_NAME}"?project=${CLOUDSDK_CORE_PROJECT}"
 }
 # Public: Cloud Run 서비스를 생성하거나 업데이트한다.
@@ -247,15 +193,12 @@ get_cloudrun_log_url() {
 replace_cloudrun() {
   local OVERRIDE_FILE_PATH="$1"
   local DEFAULT_FILE_PATH="$DEPLOY_DIR/cloud-run-service.default.yml"
-  local CLOUD_RUN_NAME="$(get_cloudrun_name)"
-  local BUILD_ID="$(git_commit_id)"
   local IMAGE="$(get_docker_image_tag)"
 
-  export D1_ENV D1_SITE CLOUD_RUN_NAME BUILD_ID IMAGE
+  export CLOUD_RUN_NAME IMAGE
 
-  local DATE=$(date '+%Y%m%d_%H%M%S')
-  local TEMP_OVERRIDE_FILE_PATH="$DEPLOY_DIR/.override.tmp.yml"
-  local OUTFILE_PATH="./deploy/cloud-run-service.$DATE.yml"
+  local TEMP_OVERRIDE_FILE_PATH="$(mktemp)"
+  local OUTFILE_PATH="$(mktemp)"
 
   if [ -f "$OVERRIDE_FILE_PATH" ]; then
     echo "Override file $OVERRIDE_FILE_PATH exists. Merging..."
@@ -285,6 +228,10 @@ replace_cloudrun() {
 
   gcloud run services replace "$OUTFILE_PATH"
 
+  # allow unauthenticated access
+  gcloud run services add-iam-policy-binding ${CLOUD_RUN_NAME} \
+    --member="allUsers" --role="roles/run.invoker"
+
   echo "Cloud Run service $CLOUD_RUN_NAME updated."
 }
 
@@ -293,20 +240,15 @@ auth_docker_repository() {
 }
 
 delete_subscription() {
-  local SUBSCRIPTION="$(get_subscription_name)"
-
-  if subscription_exists "$SUBSCRIPTION"; then
-    echo "Subscription $SUBSCRIPTION exists. Deleting..."
-    gcloud pubsub subscriptions delete "$SUBSCRIPTION"
+  if subscription_exists "$SUBSCRIPTION_NAME"; then
+    echo "Subscription $SUBSCRIPTION_NAME exists. Deleting..."
+    gcloud pubsub subscriptions delete "$SUBSCRIPTION_NAME"
   else
-    echo "Subscription $SUBSCRIPTION does not exist. Skip deleting..."
+    echo "Subscription $SUBSCRIPTION_NAME does not exist. Skip deleting..."
   fi
 }
 
 delete_topic() {
-  local TOPIC_NAME="$(get_topic_name)"
-  local SUBSCRIPTION="$(get_subscription_name)"
-
   if topic_exists "$TOPIC_NAME"; then
     echo "Topic $TOPIC_NAME exists. Deleting..."
     gcloud pubsub topics delete "$TOPIC_NAME"
@@ -316,61 +258,45 @@ delete_topic() {
 }
 
 delete_scheduler() {
-  local JOB_NAME="$(get_scheduler_name)"
-
-  if scheduler_exists "$JOB_NAME"; then
-    echo "Scheduler $JOB_NAME exists. Deleting..."
-    gcloud scheduler jobs delete "$JOB_NAME" --location "$X_CLOUDSDK_SCHEDULER_LOCATION" --quiet
+  if scheduler_exists "$SCHEDULER_NAME"; then
+    echo "Scheduler $SCHEDULER_NAME exists. Deleting..."
+    gcloud scheduler jobs delete "$SCHEDULER_NAME" --location "$X_CLOUDSDK_SCHEDULER_LOCATION" --quiet
   else
-    echo "Scheduler $JOB_NAME exists. Skipping deletion..."
+    echo "Scheduler $SCHEDULER_NAME exists. Skipping deletion..."
   fi
 }
 
 delete_cloudrun() {
-  if cloudrun_exists "$(get_cloudrun_name)"; then
-    echo "Cloud Run service $(get_cloudrun_name) exists. Deleting..."
-    gcloud run services delete "$(get_cloudrun_name)" --quiet
+  if cloudrun_exists "$CLOUD_RUN_NAME"; then
+    echo "Cloud Run service $CLOUD_RUN_NAME exists. Deleting..."
+    gcloud run services delete "$CLOUD_RUN_NAME" --quiet
   else
-    echo "Cloud Run service $(get_cloudrun_name) not exists."
+    echo "Cloud Run service $CLOUD_RUN_NAME not exists."
   fi
 }
 
 send_message_to_pubsub() {
-  gcloud pubsub topics publish "$(get_topic_name)" "$1"
-}
-
-get_dead_letter_topic_name() {
-  local TASK_NAME=$(get_task_name)
-  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
-  echo "topic-cs-${SHORT_ENV_NAME}-${D1_SITE}-dead-letter"
-}
-
-get_dead_letter_subscription_name() {
-  local SHORT_ENV_NAME=$(shorten_environment_name "$D1_ENV")
-  echo "sub-cs-${SHORT_ENV_NAME}-${D1_SITE}-dead-letter"
+  gcloud pubsub topics publish "${TOPIC_NAME}" "$1"
 }
 
 # Public: Dead Letter 토픽이 없는 경우 생성한다
 create_dead_letter_topic_and_subscription() {
-  local TOPIC_NAME=$(get_dead_letter_topic_name)
-  local SUBSCRIPTION=$(get_dead_letter_subscription_name)
+  local TOPIC_NAME=${DEAD_LETTER_TOPIC_NAME}
+  local SUBSCRIPTION=${DEAD_LETTER_SUBSCRIPTION_NAME}
 
   if topic_exists "$TOPIC_NAME"; then
-    echo "Topic $TOPIC_NAME already exists. Skip creating topic."
+    echo "Dead-letter Topic $TOPIC_NAME already exists. Skip creating topic."
   else
     echo "Topic $TOPIC_NAME does not exist. Creating..."
     gcloud pubsub topics create "$TOPIC_NAME" \
-      --flags-file="$DEPLOY_DIR/.common.default.tmp.yml"
+      ${GCLOUD_CLI_LABEL_OPTS}
   fi
 
   if subscription_exists "$SUBSCRIPTION"; then
-    echo "Subscription $SUBSCRIPTION already exists. Updating.."
-    gcloud pubsub subscriptions update "$SUBSCRIPTION" \
-      --push-endpoint="$ENTRYPOINT"
+    echo "Dead-letter Subscription $SUBSCRIPTION already exists. Skip creating subscription.."
   else
     echo "Subscription $SUBSCRIPTION does not exist. Creating..."
     gcloud pubsub subscriptions create "$SUBSCRIPTION" \
-      --flags-file="$DEPLOY_DIR/.common.default.tmp.yml" \
       --topic "$TOPIC_NAME" \
       --expiration-period="never"
   fi
@@ -378,12 +304,7 @@ create_dead_letter_topic_and_subscription() {
   return $?
 }
 
-create_temp_common_default() {
-  envsubst <"$DEPLOY_DIR"/common.default.yml >"$DEPLOY_DIR"/.common.default.tmp.yml
-}
-
 _deploy() {
-  create_temp_common_default
   # if $CUSTOM_ENTRYPOINT is null, then deploy to cloudrun
   if [ -z "$CUSTOM_ENTRYPOINT" ]; then
     # build the image if FORCE_BUILD is true or docker image not exits,
@@ -401,7 +322,9 @@ _deploy() {
     replace_cloudrun "$CLOUD_RUN_SERVICE_OVERRIDE_FILE"
   fi
 
-  create_topic_and_subscription
+  if [ "$USING_PUBSUB" = "true" ]; then
+    create_topic_and_subscription
+  fi
 
   # if $USING_SCHEDULER == 'true' -> create scheduler
   if [ "$USING_SCHEDULER" = "true" ]; then
@@ -415,17 +338,6 @@ _deploy() {
 
   echo ""
   echo "Deployment completed. 🚀"
-}
-
-print_urls() {
-  echo "* Artifact Registry Container Image at 👉 $(get_artifact_registry_url)"
-  echo "* Cloud Run at 👉 $(get_cloudrun_url)"
-  echo "* Cloud Run Log at 👉 $(get_cloudrun_log_url)"
-  echo "* Cloud Pub/Sub Topic at 👉 $(get_topic_url)"
-  echo "* Cloud Pub/Sub Subscription at 👉 $(get_subscription_url)"
-  if [ "$USING_SCHEDULER" = "true" ]; then
-    echo "* Cloud Scheduler at 👉 $(get_scheduler_url)"
-  fi
 }
 
 _undeploy() {
@@ -461,7 +373,6 @@ gcloud_emulator_helper() {
 
 create_topic_and_subscription() {
   create_topic
-  create_dead_letter_topic_and_subscription
 
   # if $SUBSCRIPTION_FLAGS_FILE is normal file, use it
   if [ -f "$SUBSCRIPTION_FLAGS_FILE" ]; then
@@ -476,29 +387,7 @@ ngrok_get_public_endpoint() {
   ngrok api tunnels list | jq -r -c ".tunnels[] | select(.forwards_to | contains(\"$PORT\")) | .public_url"
 }
 
-shorten_environment_name() {
-  # if development, return dev
-  # if staging, return stg
-  # if production, return prd
-  # else, return $1
-  case "$1" in
-  "development")
-    echo "dev"
-    ;;
-  "staging")
-    echo "stg"
-    ;;
-  "production")
-    echo "prd"
-    ;;
-  *)
-    echo "$1"
-    ;;
-  esac
-}
-
 _publish() {
-  local TOPIC_NAME="$(get_topic_name)"
   local MESSAGE=$1
   echo "Publishing Message: $MESSAGE to topic: $TOPIC_NAME"
   gcloud pubsub topics publish "$TOPIC_NAME" --message "$MESSAGE"
@@ -520,57 +409,59 @@ _mock() {
 }
 
 _info() {
-  local TOPIC_NAME=$(get_topic_name)
-  local TOPIC_EXISTS=$(topic_exists "$TOPIC_NAME" && echo "true" || echo "false")
-
-  local SUBSCRIPTION_NAME=$(get_subscription_name)
-  local SUBSCRIPTION_EXISTS=$(subscription_exists "$SUBSCRIPTION_NAME" && echo "true" || echo "false")
-
-  local DEAD_LETTER_TOPIC_NAME=$(get_dead_letter_topic_name)
-  local DEAD_LETTER_TOPIC_EXISTS=$(topic_exists "$DEAD_LETTER_TOPIC_NAME" && echo "true" || echo "false")
-
-  local CLOUD_RUN_NAME=$(get_cloudrun_name)
-  local CLOUD_RUN_EXISTS=$(cloudrun_exists && echo "true" || echo "false")
-
   echo "-------------------------"
-  echo "Topic & Subscription"
+  echo "Cloud Run"
   echo "-------------------------"
-  echo "Topic Name: $TOPIC_NAME"
-  if [ "$TOPIC_EXISTS" = "true" ]; then
-    echo "Topic URL: $(get_topic_url)"
-  else
-    echo "Topic URL: Topic does not exist"
-  fi
-
-  echo "Subscription Name: $SUBSCRIPTION_NAME"
-  if [ "$SUBSCRIPTION_EXISTS" = "true" ]; then
-    echo "Subscription URL: $(get_subscription_url)"
-  else
-    echo "Subscription URL: Subscription does not exist"
-  fi
-
-  echo "Dead Letter Topic Name: $(get_dead_letter_topic_name)"
-
-  if [ "$CLOUD_RUN_EXISTS" == "true" ]; then
-    echo "-------------------------"
-    echo "Cloud Run"
-    echo "-------------------------"
-    echo "Name: $CLOUD_RUN_NAME"
+  echo "Name: $CLOUD_RUN_NAME"
+  if cloudrun_exists; then
     echo "URL: $(get_cloudrun_url)"
     echo "Log URL: $(get_cloudrun_log_url)"
+    echo "Entrypoint URL: $(get_task_entrypoint)"
+  else
+    echo "NOT FOUND!"
+  fi
+
+  if [ "$USING_PUBSUB" = "true" ]; then
+    echo "-------------------------"
+    echo "Topic & Subscription"
+    echo "-------------------------"
+    echo "Topic Name: $TOPIC_NAME"
+    if topic_exists "$TOPIC_NAME"; then
+      echo "Topic URL: $(get_topic_url)"
+    else
+      echo "NOT FOUND!"
+    fi
+
+    echo "Subscription Name: $SUBSCRIPTION_NAME"
+    if subscription_exists "$SUBSCRIPTION_NAME"; then
+      echo "Subscription URL: $(get_subscription_url)"
+    else
+      echo "NOT FOUND!"
+    fi
+
+    echo "Dead Letter Topic Name: $DEAD_LETTER_TOPIC_NAME"
+    if topic_exists "$DEAD_LETTER_TOPIC_NAME"; then
+      echo "URL: https://console.cloud.google.com/cloudpubsub/topic/detail/${DEAD_LETTER_TOPIC_NAME}?project=${CLOUDSDK_CORE_PROJECT}"
+    else
+      echo "NOT FOUND!"
+    fi
+    echo "Dead Letter Subscription Name: $DEAD_LETTER_SUBSCRIPTION_NAME"
+    if subscription_exists "$DEAD_LETTER_SUBSCRIPTION_NAME"; then
+      echo "URL: https://console.cloud.google.com/cloudpubsub/subscription/detail/${DEAD_LETTER_SUBSCRIPTION_NAME}?project=${CLOUDSDK_CORE_PROJECT}"
+    else
+      echo "NOT FOUND!"
+    fi
   fi
 
   if [ "$USING_SCHEDULER" = "true" ]; then
     echo "-------------------------"
     echo "Cloud Scheduler"
     echo "-------------------------"
-    echo "Name: $(get_scheduler_name)"
-    echo "URL: $(get_scheduler_url)"
+    echo "Name: ${SCHEDULER_NAME}"
+    if scheduler_exists "${SCHEDULER_NAME}"; then
+      echo "URL: $(get_scheduler_url)"
+    else
+      echo "NOT FOUND!"
+    fi
   fi
-
-  echo "-------------------------"
-  echo "Entry Point"
-  echo "-------------------------"
-  echo "URL: $(get_task_entrypoint)"
-
 }

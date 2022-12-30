@@ -1,6 +1,0 @@
-- --labels:
-  # Only hyphens (-), underscores (_), lowercase characters, and numbers are allowed. Keys must start with
-  # a lowercase character. International characters are allowed. Key length must not exceed 63 characters.
-    service: cornerstone
-    d1_env: ${D1_ENV}
-    d1_site: ${D1_SITE}
