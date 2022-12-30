@@ -1,5 +1,5 @@
 {
-  "name": "@day1co/cornerstone-task-nodejs-sample",
+  "name": "@day1co/cornerstone-nodejs-sample",
   "version": "0.0.2",
   "author": "Day1Company",
   "main": "./lib/index.js",
@@ -20,10 +20,11 @@
     "test": "jest --coverage --detectOpenHandles --forceExit"
   },
   "dependencies": {
-    "@day1co/cornerstone-starter": "~0.0.4",
-    "@day1co/pebbles": "^3.1.24"
+    "@day1co/cornerstone-starter": "^0.0.7",
+    "@day1co/pebbles": "^3.1.35"
   },
   "devDependencies": {
+    "@day1co/cornerstone-cli": "^0.0.4",
     "@types/jest": "^28.1.4",
     "@types/node": "^18.0.1",
     "@typescript-eslint/eslint-plugin": "^5.30.5",

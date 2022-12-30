@@ -1,0 +1,28 @@
+metadata:
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '5'
+        run.googleapis.com/vpc-access-connector: vpc-iolo
+        run.googleapis.com/vpc-access-egress: all-traffic
+    spec:
+      containerConcurrency: 5
+      containers:
+        - env:
+            - name: D1_SITE
+              value: day1
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: http://config.day1co.io
+            - name: SPRING_CLOUD_CONFIG_NAME
+              value: cornerstone
+            - name: SPRING_CLOUD_CONFIG_PROFILE
+              value: development
+            - name: NODE_ENV
+              value: dev
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 512Mi
