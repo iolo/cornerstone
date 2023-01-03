@@ -1,0 +1,18 @@
+# Node Modules
+node_modules/
+
+# Compiled output
+/lib/
+
+# Test
+coverage/
+
+# OS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+
+# Cloud Run YAML Output File
+deploy/cloud-run-service.20*.yml

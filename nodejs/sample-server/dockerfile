@@ -8,7 +8,7 @@ ENV GITHUB_TOKEN=$GITHUB_TOKEN
 
 RUN echo //npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN} >> ~/.npmrc
 
-RUN npm ci && \
+RUN npm install && \
     npm run build && \
     npm prune --omit=dev
 
