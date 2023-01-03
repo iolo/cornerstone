@@ -5,35 +5,22 @@
 cornerstone-client 를 사용하는 측에서는 다음처럼 코드를 사용합니다.
 
 ```typescript 
-import { Client } from '@day1co/cornerstone-client';
+import { CornerstoneClient } from '@day1co/cornerstone-client';
 import { FastBus } from '@day1co/fastbus';
 import { LoggerFactory } from '@day1co/pebbles';
 
 const logger = LoggerFactory.getLogger('my-logger');
-const bus = new FastBus({}, BusType.LOCAL);
-const client = new Client({logger, bus});
+const bus = new FastBus({}, BusType.PUBSUB);
+const client = new CornerstoneClient({logger, bus});
 
 // stub 를 얻어서
-const updateEnrollmentState = client.getStub('update-enrollment-state', 'development', 'day1co'); 
+const taskName = `day1-${process.env.SPRING_CLOUD_CONFIG_PROFILE}-update-enrollment-state`;
+const updateEnrollmentState = client.getStub(topicName);
 // 'update-enrollment-state': 태스크 이름
 
 // 메시지를 보낸다
 const message = {state: 'NORMAL'};
-const requestId = updateEnrollmentState(message);
-logger.info(`requestId : ${requestId}`);
-```
-
-이 명령은 메시지를 JSON 오브젝트 형태로, 다음과 같이 `message`에 달아 보냅니다.
-requestId 는 cornerstone-client 가 임의로 추가하는 값입니다. 태스크 실행시 생략할 수 있습니다.
-
-위 코드는 실제로는 GCP Pub/Sub 에 다음과 같이 보내집니다. 
-```json
-{
-  "message": {
-    "state": "NORMAL"
-  },
-  "requestId": "a1b2c3d4e5f6"
-}
+updateEnrollmentState(message);
 ```
 
 ## nodejs-sample 의 예제
