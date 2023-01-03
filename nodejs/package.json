@@ -1,8 +1,10 @@
 {
   "name": "cornerstone-nodejs",
   "workspaces": [
-    "common",
+    "commons",
     "client",
-    "starter"
+    "starter",
+    "sample-server",
+    "sample-client"
   ]
 }
