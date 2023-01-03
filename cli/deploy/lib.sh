@@ -144,7 +144,7 @@ build_docker_image() {
   # ARM 환경에서 빌드된 것이 배포되지 않도록 platform 은 linux/amd64 로 고정
   export DOCKER_DEFAULT_PLATFORM=linux/amd64
 
-  docker compose build "$TASK_NAME"
+  docker compose build
   unset DOCKER_DEFAULT_PLATFORM
 }
 
