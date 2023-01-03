@@ -1,13 +1,13 @@
-import { HttpClient } from '@day1co/pebbles';
+import { HttpClient, LoggerFactory } from '@day1co/pebbles';
 import { DummyTask } from '@day1co/cornerstone-commons';
 
-import { Application } from './application';
+import { CornerstoneApplication } from './cornerstone-application';
 
-describe('application', () => {
-  process.env.PORT = '8080';
+describe('cornerstone-application', () => {
+  const logger = LoggerFactory.getLogger('test');
   const task = new DummyTask();
-  const app = new Application(task);
-  const client = new HttpClient('http://127.0.0.1:8080');
+  const app = new CornerstoneApplication({ logger, task });
+  const client = new HttpClient(`http://127.0.0.1:${app.port}`);
   beforeAll(async () => {
     await app.run();
   });
@@ -20,21 +20,19 @@ describe('application', () => {
     expect(res.data).toBe('pong!');
   });
   it('GET /', async () => {
-    const TEST_MESSAGE = 'hello';
     const res = await client.sendGetRequest<string>('/', {
-      params: { message: JSON.stringify(TEST_MESSAGE) },
+      params: { message: JSON.stringify('**MESSAGE**') },
     });
     expect(res.status).toBe(202);
     expect(res.data).toBe('ACCEPTED');
-    expect(task.message).toBe(TEST_MESSAGE);
+    expect(task.message).toBe('**MESSAGE**');
   });
   it('POST /', async () => {
-    const TEST_MESSAGE = 'hello';
     const res = await client.sendPostRequest<string>('/', {
-      message: { data: Buffer.from(JSON.stringify(TEST_MESSAGE), 'utf8').toString('base64') },
+      message: { data: Buffer.from(JSON.stringify('**MESSAGE**'), 'utf8').toString('base64') },
     });
     expect(res.status).toBe(202);
     expect(res.data).toBe('ACCEPTED');
-    expect(task.message).toBe(TEST_MESSAGE);
+    expect(task.message).toBe('**MESSAGE**');
   });
 });

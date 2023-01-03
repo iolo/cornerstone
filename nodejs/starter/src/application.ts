@@ -6,6 +6,7 @@ import { CloudPubSubEventRoute } from '@day1co/cornerstone-commons/lib/gcp/cloud
 
 const logger = LoggerFactory.getLogger('cornerstone-commons-starter-starter');
 
+/** @deprecated in favor of CornerstoneApplication */
 export class Application<T> {
   server: FastifyInstance;
   taskRoute: TaskRoute<T>;
