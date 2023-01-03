@@ -1,2 +1,2 @@
-export { PublishingMessage } from "./message";
-export { Client } from "./client";
+export { Client } from './client';
+export { CornerstoneClient } from './cornerstone-client';

@@ -15,16 +15,16 @@ npm install @day1co/cornerstone-client
 ## Usage
 
 ```js
-import { Client } from '@day1co/cornerstone-client';
-import { FastBus } from '@day1co/fastbus';
+import { CornerstoneClient } from '@day1co/cornerstone-client';
+import { FastBus, BusType } from '@day1co/fastbus';
 
 const logger = LoggerFactory.getLogger('my-logger');
-const bus = new FastBus({}, BusType.LOCAL);
-const client = new Client({logger, bus});
+const bus = new FastBus({}, BusType.CLOUD_PUBSUB);
+const client = new CornerstoneClient({logger, bus});
 
-const updateEnrollmentState = client.getStub('updateEnrollmentState');
-const message = {state: 'NORMAL'};
-updateEnrollmentState(message);
+const yourTask = client.getStub('your-task-name');
+const message = 'message-to-your-task';
+yourTask(message);
 ```
 
 ## Roadmap
