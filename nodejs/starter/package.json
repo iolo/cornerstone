@@ -25,7 +25,8 @@
   },
   "dependencies": {
     "@day1co/cornerstone-commons": "^0.1.0",
-    "@day1co/pebbles": "^3.1.35"
+    "@day1co/pebbles": "^3.1.35",
+    "fastify": "^4.11.0"
   },
   "devDependencies": {
     "@day1co/eslint-config": "^0.0.1",
